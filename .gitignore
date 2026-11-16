@@ -4,3 +4,4 @@ builds/*/out/frames/
 *.log
 .DS_Store
 Thumbs.db
+builds/*/out/check/**/*.png

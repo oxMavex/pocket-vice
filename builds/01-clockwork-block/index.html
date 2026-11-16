@@ -412,34 +412,39 @@ people.forEach((p,i)=>{bodies.setColorAt(i,col.set(p.shirt));heads.setColorAt(i,
 
 // selection visuals
 const ACC=0xff5a36;
-const ring=new THREE.Mesh(new THREE.RingGeometry(.13,.185,32).rotateX(-Math.PI/2),new THREE.MeshBasicMaterial({color:ACC,transparent:true,depthWrite:false}));ring.renderOrder=3;scene.add(ring);
+const ring=new THREE.Mesh(new THREE.RingGeometry(.15,.22,32).rotateX(-Math.PI/2),new THREE.MeshBasicMaterial({color:ACC,transparent:true,depthWrite:false}));ring.renderOrder=3;scene.add(ring);
 const pin=new THREE.Group();
 pin.add(new THREE.Mesh(new THREE.ConeGeometry(.07,.17,12).rotateX(Math.PI).translate(0,.085,0),new THREE.MeshBasicMaterial({color:ACC,transparent:true})));
 pin.add(new THREE.Mesh(new THREE.SphereGeometry(.075,12,10).translate(0,.2,0),new THREE.MeshBasicMaterial({color:ACC,transparent:true})));
-scene.add(pin);
+pin.scale.setScalar(1.5);scene.add(pin);
 const MAXQ=900;
 const routeGeo=new THREE.BufferGeometry();routeGeo.setAttribute('position',new THREE.BufferAttribute(new Float32Array(MAXQ*18),3));
 const routeMat=new THREE.MeshBasicMaterial({color:ACC,transparent:true,opacity:.9,depthWrite:false,side:THREE.DoubleSide});
 const route=new THREE.Mesh(routeGeo,routeMat);route.renderOrder=3;route.frustumCulled=false;scene.add(route);
+const routeOGeo=new THREE.BufferGeometry();routeOGeo.setAttribute('position',new THREE.BufferAttribute(new Float32Array(MAXQ*18),3));
+const routeOMat=new THREE.MeshBasicMaterial({color:0xfffaf0,transparent:true,opacity:.95,depthWrite:false,side:THREE.DoubleSide});
+const routeO=new THREE.Mesh(routeOGeo,routeOMat);routeO.renderOrder=2;routeO.frustumCulled=false;scene.add(routeO);
 const stopMat=new THREE.MeshBasicMaterial({color:ACC,transparent:true,depthWrite:false});
 const stops=inst(new THREE.CircleGeometry(.12,20).rotateX(-Math.PI/2),stopMat,16,{cast:false,recv:false});stops.renderOrder=4;
 const dotMat=new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,depthWrite:false});
 const stopDots=inst(new THREE.CircleGeometry(.05,16).rotateX(-Math.PI/2),dotMat,16,{cast:false,recv:false});stopDots.renderOrder=5;
 const metMat=new THREE.MeshBasicMaterial({color:0xfff6e4,transparent:true,depthWrite:false});
 const metRings=inst(new THREE.RingGeometry(.09,.125,20).rotateX(-Math.PI/2),metMat,NP,{cast:false,recv:false});metRings.renderOrder=3;
-[ring,pin,route,stops,stopDots,metRings].forEach(o=>o.visible=false);
+[ring,pin,route,routeO,stops,stopDots,metRings].forEach(o=>o.visible=false);
 
 // ---------- selection ----------
 let sel=null,selStart=0,routeQuads=0,metSet=new Set();
 const CATC={home:'#d8ccb6',work:'#5f7f95',errand:'#e2a53a',park:'#7fa268',walk:'#ff5a36'};
 function catOf(e){if(e.k===1)return'walk';const k=e.pl.kind;return k===HOME?'home':k===PARK?'park':(k===WORK||e.why==='work'||e.pl===sel.job)?'work':'errand';}
 function buildRoute(p){
-  const a=routeGeo.attributes.position.array;let q=0;const w=.055,y=.03;
+  const a=routeGeo.attributes.position.array,ao=routeOGeo.attributes.position.array;let q=0;const w=.075,wo=.115,y=.03;
   for(const e of p.ev){if(e.k!==1)continue;
     for(let i=0;i<e.pts.length-1&&q<MAXQ;i++){const A=e.pts[i],B=e.pts[i+1];let dx=B[0]-A[0],dz=B[1]-A[1];const l=Math.hypot(dx,dz)||1;dx/=l;dz/=l;
       const ax=A[0]-dx*w,az=A[1]-dz*w,bx=B[0]+dx*w,bz=B[1]+dz*w,nx=-dz*w,nz=dx*w,o=q*18;
-      a.set([ax+nx,y,az+nz, ax-nx,y,az-nz, bx+nx,y,bz+nz, bx+nx,y,bz+nz, ax-nx,y,az-nz, bx-nx,y,bz-nz],o);q++;}}
-  routeGeo.attributes.position.needsUpdate=true;routeQuads=q;
+      a.set([ax+nx,y,az+nz, ax-nx,y,az-nz, bx+nx,y,bz+nz, bx+nx,y,bz+nz, ax-nx,y,az-nz, bx-nx,y,bz-nz],o);
+      const k=wo/w,cx=ax-dx*(wo-w),cz=az-dz*(wo-w),ex=bx+dx*(wo-w),ez=bz+dz*(wo-w),mx=nx*k,mz=nz*k,y2=y-.004;
+      ao.set([cx+mx,y2,cz+mz, cx-mx,y2,cz-mz, ex+mx,y2,ez+mz, ex+mx,y2,ez+mz, cx-mx,y2,cz-mz, ex-mx,y2,ez-mz],o);q++;}}
+  routeGeo.attributes.position.needsUpdate=routeOGeo.attributes.position.needsUpdate=true;routeQuads=q;
   const seen=new Map();for(const e of p.ev){if(e.k===0&&!seen.has(e.pl.id))seen.set(e.pl.id,e.pl.kind===PARK?(e.din||e.pl.doors[0].d):e.pl.doors[0].d);}
   let i=0;for(const d of seen.values()){if(i>=16)break;setI(stops,i,d[0],.035,d[1]);setI(stopDots,i,d[0],.04,d[1]);i++;}
   stops.count=stopDots.count=i;stops.instanceMatrix.needsUpdate=stopDots.instanceMatrix.needsUpdate=true;
@@ -458,9 +463,9 @@ function drawBar(p){
 }
 function select(p,now){
   sel=p;selStart=now;
-  if(!p){[ring,pin,route,stops,stopDots,metRings].forEach(o=>o.visible=false);$('card').classList.add('hide');return;}
+  if(!p){[ring,pin,route,routeO,stops,stopDots,metRings].forEach(o=>o.visible=false);$('card').classList.add('hide');return;}
   if(!p.met)p.met=computeMet(p);metSet=p.met;
-  buildRoute(p);[ring,pin,route,stops,stopDots,metRings].forEach(o=>o.visible=true);
+  buildRoute(p);[ring,pin,route,routeO,stops,stopDots,metRings].forEach(o=>o.visible=true);
   $('cName').textContent=p.name;$('cRole').textContent=p.role;$('cAv').style.background=p.shirt;
   drawBar(p);
   $('cMeet').innerHTML='<span class="a">Crossed paths with '+p.met.size+' people today</span><span>'+p.stops+' places</span><span>on foot '+fmtDur(p.onFoot)+'</span>';
@@ -468,7 +473,7 @@ function select(p,now){
 }
 function nowText(p,gm){
   const e=p.ev[p.ei],h=mod(gm,DAY)/60;
-  if(e.k===1){const to=e.to;const dst=to===p.home?'home':to.kind===PARK?to.name:to.name;return 'Walking to '+dst+' <em>· arrives '+fmtTime(e.t1)+'</em>';}
+  if(e.k===1){const to=e.to;return (to===p.home?'Walking home':'Walking to '+to.name)+' <em>· arrives '+fmtTime(e.t1)+'</em>';}
   const pl=e.pl;
   if(pl===p.home)return (h<6||h>=22.5)?'Asleep at home':'At home';
   if(pl.kind===PARK)return (e.why==='dog'?'Walking the dog in ':'Strolling in ')+pl.name;
@@ -488,7 +493,7 @@ function resize(){
   pmat.uniforms.blur.value=5.5*renderer.getPixelRatio();
 }
 function placeCamera(){
-  const a=vw/vh;let hh=Math.max(G*.5,(a<.8?G*.56:G*.7)/a);hh/=view.zoom;
+  const a=vw/vh;let hh=Math.max(G*.5,(a<.8?G*.48:G*.7)/a);hh/=view.zoom;
   cam.left=-hh*a;cam.right=hh*a;cam.top=hh;cam.bottom=-hh;cam.updateProjectionMatrix();
   const d=60,ce=Math.cos(view.el);
   cam.position.set(view.tx+d*ce*Math.cos(view.az),d*Math.sin(view.el),view.tz+d*ce*Math.sin(view.az));
@@ -524,14 +529,14 @@ function update(gm,anim,selFade){
   bodies.instanceMatrix.needsUpdate=heads.instanceMatrix.needsUpdate=true;
   if(sel){
     const p=sel,reveal=sm(0,.85,anim-selStart);
-    routeGeo.setDrawRange(0,Math.floor(routeQuads*reveal)*6);
+    routeGeo.setDrawRange(0,Math.floor(routeQuads*reveal)*6);routeOGeo.setDrawRange(0,Math.floor(routeQuads*reveal)*6);
     const e=p.ev[p.ei];let px=p.x,pz=p.z;
     if(!p.vis){const d=e.pl.doors[0].d;px=e.pl.kind===PARK?p.x:d[0];pz=e.pl.kind===PARK?p.z:d[1];}
     const pulse=1+.18*Math.sin(anim*6);
     ring.position.set(px,.016,pz);ring.scale.setScalar(p.vis?pulse:pulse*1.5);
-    pin.position.set(p.vis?px:e.pl.x,(p.vis?.42:e.pl.floors*FH+(e.pl.roof?.42:.2))+Math.sin(anim*3)*.04,p.vis?pz:e.pl.z);
+    pin.position.set(p.vis?px:e.pl.x,(p.vis?.5:e.pl.floors*FH+(e.pl.roof?.42:.2))+Math.sin(anim*3)*.04,p.vis?pz:e.pl.z);
     const op=selFade*sm(0,.3,anim-selStart);
-    ring.material.opacity=op;pin.children.forEach(c=>c.material.opacity=op);routeMat.opacity=.9*op;stopMat.opacity=op;dotMat.opacity=op;metMat.opacity=.95*op;
+    ring.material.opacity=op;pin.children.forEach(c=>c.material.opacity=op);routeMat.opacity=.95*op;routeOMat.opacity=.95*op;stopMat.opacity=op;dotMat.opacity=op;metMat.opacity=.95*op;
     let k=0;for(const id of metSet){const o=people[id];if(!o.vis)continue;setI(metRings,k++,o.x,.014,o.z);}
     metRings.count=k;metRings.instanceMatrix.needsUpdate=true;
     goal.tx=px*.75;goal.tz=pz*.75;
