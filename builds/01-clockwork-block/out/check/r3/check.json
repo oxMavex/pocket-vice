@@ -1,0 +1,100 @@
+{
+  "slug": "01-clockwork-block",
+  "tag": "r3",
+  "url": "http://127.0.0.1:59386/builds/01-clockwork-block/",
+  "when": "2026-11-16T12:20:32.026Z",
+  "runs": {
+    "desktop": {
+      "loadMs": 999,
+      "errors": [],
+      "fps": 60.1,
+      "shots": [
+        "desktop-t0_0.png",
+        "desktop-t2_0.png",
+        "desktop-t12_0.png",
+        "desktop-t23_9.png"
+      ],
+      "seekMs": 1.4,
+      "info": {
+        "seed": 7,
+        "residents": 210,
+        "outsideNow": 15,
+        "places": 186,
+        "homes": 144,
+        "offices": 31,
+        "cafes": 6,
+        "shops": 3,
+        "parks": 2,
+        "trees": 40,
+        "lamps": 36,
+        "drawCalls": 35,
+        "triangles": 64632,
+        "fps": 61,
+        "fileBytes": 44206,
+        "webgl2": true,
+        "gpu": "ANGLE (NVIDIA, NVIDIA Quadro RTX 3000 (0x00001F36) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      }
+    },
+    "mobile": {
+      "loadMs": 1196,
+      "errors": [],
+      "fps": 60.1,
+      "shots": [
+        "mobile-t0_0.png",
+        "mobile-t2_0.png",
+        "mobile-t12_0.png",
+        "mobile-t23_9.png"
+      ],
+      "seekMs": 1.2,
+      "info": {
+        "seed": 7,
+        "residents": 210,
+        "outsideNow": 15,
+        "places": 186,
+        "homes": 144,
+        "offices": 31,
+        "cafes": 6,
+        "shops": 3,
+        "parks": 2,
+        "trees": 40,
+        "lamps": 36,
+        "drawCalls": 35,
+        "triangles": 64632,
+        "fps": 61,
+        "fileBytes": 44206,
+        "webgl2": true,
+        "gpu": "ANGLE (NVIDIA, NVIDIA Quadro RTX 3000 (0x00001F36) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      }
+    },
+    "square": {
+      "loadMs": 362,
+      "errors": [],
+      "shots": [
+        "square-t0_0.png",
+        "square-t2_0.png",
+        "square-t12_0.png",
+        "square-t23_9.png"
+      ],
+      "seekMs": 1.2,
+      "info": {
+        "seed": 7,
+        "residents": 210,
+        "outsideNow": 15,
+        "places": 186,
+        "homes": 144,
+        "offices": 31,
+        "cafes": 6,
+        "shops": 3,
+        "parks": 2,
+        "trees": 40,
+        "lamps": 36,
+        "drawCalls": 35,
+        "triangles": 64632,
+        "fps": 5,
+        "fileBytes": 44206,
+        "webgl2": true,
+        "gpu": "ANGLE (NVIDIA, NVIDIA Quadro RTX 3000 (0x00001F36) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      }
+    }
+  }
+}

@@ -56,7 +56,16 @@ function serve() {
       await page.waitForTimeout(1000);
       run.fps = await page.evaluate(() => new Promise(r => { let n = 0; const s = performance.now(); const f = () => { n++; if (performance.now() - s < 5000) requestAnimationFrame(f); else r(+(n / ((performance.now() - s) / 1000)).toFixed(1)); }; requestAnimationFrame(f); }));
       await page.screenshot({ path: path.join(OUT, `${name}-live.png`) });
-      // tap test: tap in the centre-ish and see if a person gets selected (best effort)
+      // tap test: real pointer taps on a grid around the centre until a person gets selected
+      const vp = page.viewportSize();
+      run.tap = null;
+      outer: for (let gy = 0.3; gy <= 0.7; gy += 0.025) for (let gx = 0.25; gx <= 0.75; gx += 0.025) {
+        const x = Math.round(vp.width * gx), y = Math.round(vp.height * gy);
+        if (cfg.hasTouch) await page.touchscreen.tap(x, y); else await page.mouse.click(x, y);
+        await page.waitForTimeout(60);
+        const open = await page.evaluate(() => !document.getElementById('card').classList.contains('hide'));
+        if (open) { await page.waitForTimeout(1200); run.tap = { x, y, name: await page.textContent('#cName'), now: await page.textContent('#cNow'), meet: await page.textContent('#cMeet') }; await page.screenshot({ path: path.join(OUT, name + '-tap.png') }); break outer; }
+      }
     }
     const dur = await page.evaluate(() => window.__duration);
     const times = [0, 2, dur / 2, dur - 0.1];

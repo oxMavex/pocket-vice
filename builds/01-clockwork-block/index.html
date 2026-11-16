@@ -484,7 +484,7 @@ function nowText(p,gm){
 function fmtTime(m){m=mod(Math.round(m),DAY);let h=Math.floor(m/60);const mm=m%60,ap=h<12?'AM':'PM';h=h%12||12;return h+':'+(mm<10?'0':'')+mm+' '+ap;}
 
 // ---------- view / camera ----------
-const view={az:Math.PI*.25,el:.62,zoom:1,tx:0,tz:0};
+const view={az:Math.PI*.25,el:.62,zoom:1,tx:0,tz:0,card:0};
 const goal={zoom:1,tx:0,tz:0};
 let vw=1,vh=1;
 function resize(){
@@ -495,9 +495,10 @@ function resize(){
 function placeCamera(){
   const a=vw/vh;let hh=Math.max(G*.5,(a<.8?G*.48:G*.7)/a);hh/=view.zoom;
   cam.left=-hh*a;cam.right=hh*a;cam.top=hh;cam.bottom=-hh;cam.updateProjectionMatrix();
-  const d=60,ce=Math.cos(view.el);
-  cam.position.set(view.tx+d*ce*Math.cos(view.az),d*Math.sin(view.el),view.tz+d*ce*Math.sin(view.az));
-  cam.lookAt(view.tx,0,view.tz);
+  const d=60,ce=Math.cos(view.el),sh=a<.8?view.card*hh*.36/Math.sin(view.el):0;
+  const tx=view.tx+Math.cos(view.az)*sh,tz=view.tz+Math.sin(view.az)*sh;
+  cam.position.set(tx+d*ce*Math.cos(view.az),d*Math.sin(view.el),tz+d*ce*Math.sin(view.az));
+  cam.lookAt(tx,0,tz);
 }
 
 // ---------- day / night ----------
@@ -563,7 +564,7 @@ function frame(now){
   gmNow=mod(gmNow+dt*GM_PER_S*SPEEDS[speedI],DAY);
   update(gmNow,anim,1);
   if(!sel){goal.tx=0;goal.tz=0;goal.zoom=1;if(idle>4&&!drag)view.az+=dt*.03;}else goal.zoom=1.75;
-  const k=1-Math.exp(-dt*3);view.tx=lerp(view.tx,goal.tx,k);view.tz=lerp(view.tz,goal.tz,k);view.zoom=lerp(view.zoom,goal.zoom*userZoom,k);
+  const k=1-Math.exp(-dt*3);view.tx=lerp(view.tx,goal.tx,k);view.tz=lerp(view.tz,goal.tz,k);view.zoom=lerp(view.zoom,goal.zoom*userZoom,k);view.card=lerp(view.card,sel?1:0,k);
   render();
   if(now-lastHud>90){updateHud(gmNow);lastHud=now;}
   fps.push(now);while(fps.length&&fps[0]<now-1000)fps.shift();
@@ -621,7 +622,7 @@ window.__seek=function(t){
   let fz=1;
   if(sel){let x0=1e9,x1=-1e9,z0=1e9,z1=-1e9;for(const e of sel.ev)if(e.k===1)for(const q of e.pts){x0=Math.min(x0,q[0]);x1=Math.max(x1,q[0]);z0=Math.min(z0,q[1]);z1=Math.max(z1,q[1]);}
     view.tx=(x0+x1)/2*f;view.tz=(z0+z1)/2*f;fz=clamp(G*.62/Math.max(x1-x0,z1-z0,4),1,1.8);}else{view.tx=view.tz=0;}
-  view.zoom=1+(fz-1)*f;
+  view.zoom=1+(fz-1)*f;view.card=f;
   render();updateHud(gm);
   return true;
 };
