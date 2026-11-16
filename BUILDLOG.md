@@ -15,3 +15,5 @@
 - Создана структура: `builds/`, `tools/`, `BUILDLOG.md`, `posted.md`, `CLAUDE.md`.
 - Playwright 1.65.1 установлен (devDependency), Chromium 159.0.8154.6; smoke-тест: запуск ок, WebGL2 = true.
 - git init (ветка main). Глобального git-identity нет → локально временно `0xMavex <0xMavex@users.noreply.github.com>`; поправить на настоящий noreply после входа в GitHub, до первого push.
+- gh CLI 2.104.0 установлен через winget. `gh auth status` → не залогинен. Репо на GitHub и Pages — ждут входа владельца (`gh auth login`).
+- 14:10 финиш setup. Дальше: build 01, выбор концепта.
