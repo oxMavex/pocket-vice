@@ -1,0 +1,69 @@
+{
+  "slug": "01-clockwork-block",
+  "when": "2026-11-16T12:29:50.016Z",
+  "fps": 30,
+  "errors": [],
+  "poster": {
+    "t": 2.4
+  },
+  "showcase": {
+    "frames": 900,
+    "seconds": 30,
+    "captureMs": 49739,
+    "encodeMs": 18891,
+    "bytes": 15475705,
+    "probe": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "h264",
+          "width": 1080,
+          "height": 1080,
+          "pix_fmt": "yuv420p",
+          "r_frame_rate": "30/1",
+          "nb_frames": "900"
+        }
+      ],
+      "format": {
+        "duration": "30.000000"
+      }
+    },
+    "loopCheck": {
+      "seam": 1.83,
+      "normal": 1.03
+    }
+  },
+  "process": {
+    "frames": 360,
+    "seconds": 12,
+    "captureMs": 16218,
+    "excerpt": {
+      "fn": "evalP",
+      "line0": 267,
+      "lines": 20,
+      "chars": 959,
+      "total": 711,
+      "cols": 55
+    },
+    "encodeMs": 7874,
+    "bytes": 3741687,
+    "probe": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "h264",
+          "width": 1080,
+          "height": 1080,
+          "pix_fmt": "yuv420p",
+          "r_frame_rate": "30/1",
+          "nb_frames": "360"
+        }
+      ],
+      "format": {
+        "duration": "12.000000"
+      }
+    }
+  }
+}

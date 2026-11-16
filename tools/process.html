@@ -9,7 +9,7 @@
 (async function(){
   const q=new URLSearchParams(location.search), slug=q.get('b'), fn=q.get('fn')||'evalP', TYPE=+(q.get('type')||9.5);
   const src=await fetch('/builds/'+slug+'/index.html').then(r=>r.text());
-  const total=src.split('\n').length;
+  const total=src.replace(/\n$/,'').split('\n').length;
   const a=src.indexOf('function '+fn+'('), b=src.indexOf('\n}\n',a)+2;
   const code=src.slice(a,b), line0=src.slice(0,a).split('\n').length;
   const f=document.getElementById('f');

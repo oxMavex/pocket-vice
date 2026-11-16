@@ -1,0 +1,114 @@
+{
+  "slug": "01-clockwork-block",
+  "tag": "r4",
+  "url": "http://127.0.0.1:64535/builds/01-clockwork-block/",
+  "when": "2026-11-16T12:29:18.763Z",
+  "runs": {
+    "desktop": {
+      "loadMs": 1015,
+      "errors": [],
+      "fps": 60.2,
+      "tap": {
+        "x": 512,
+        "y": 240,
+        "name": "Nico Price",
+        "now": "Walking to Bloom Florist · arrives 8:35 AM",
+        "meet": "Crossed paths with 2 people today2 placeson foot 1h 40m"
+      },
+      "shots": [
+        "desktop-t0_0.png",
+        "desktop-t2_0.png",
+        "desktop-t15_0.png",
+        "desktop-t29_9.png"
+      ],
+      "seekMs": 0.5,
+      "info": {
+        "seed": 7,
+        "residents": 210,
+        "outsideNow": 23,
+        "places": 186,
+        "homes": 144,
+        "offices": 31,
+        "cafes": 6,
+        "shops": 3,
+        "parks": 2,
+        "trees": 40,
+        "lamps": 36,
+        "drawCalls": 42,
+        "triangles": 65192,
+        "fps": 61,
+        "fileBytes": 50057,
+        "webgl2": true,
+        "gpu": "ANGLE (NVIDIA, NVIDIA Quadro RTX 3000 (0x00001F36) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      }
+    },
+    "mobile": {
+      "loadMs": 309,
+      "errors": [],
+      "fps": 60,
+      "tap": {
+        "x": 98,
+        "y": 199,
+        "name": "Miles Romero",
+        "now": "Walking to Northwind Studio · arrives 8:38 AM",
+        "meet": "Crossed paths with 2 people today2 placeson foot 1h 33m"
+      },
+      "shots": [
+        "mobile-t0_0.png",
+        "mobile-t2_0.png",
+        "mobile-t15_0.png",
+        "mobile-t29_9.png"
+      ],
+      "seekMs": 0.5,
+      "info": {
+        "seed": 7,
+        "residents": 210,
+        "outsideNow": 23,
+        "places": 186,
+        "homes": 144,
+        "offices": 31,
+        "cafes": 6,
+        "shops": 3,
+        "parks": 2,
+        "trees": 40,
+        "lamps": 36,
+        "drawCalls": 39,
+        "triangles": 64876,
+        "fps": 61,
+        "fileBytes": 50057,
+        "webgl2": true,
+        "gpu": "ANGLE (NVIDIA, NVIDIA Quadro RTX 3000 (0x00001F36) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      }
+    },
+    "square": {
+      "loadMs": 348,
+      "errors": [],
+      "shots": [
+        "square-t0_0.png",
+        "square-t2_0.png",
+        "square-t15_0.png",
+        "square-t29_9.png"
+      ],
+      "seekMs": 0.7,
+      "info": {
+        "seed": 7,
+        "residents": 210,
+        "outsideNow": 23,
+        "places": 186,
+        "homes": 144,
+        "offices": 31,
+        "cafes": 6,
+        "shops": 3,
+        "parks": 2,
+        "trees": 40,
+        "lamps": 36,
+        "drawCalls": 42,
+        "triangles": 65192,
+        "fps": 4,
+        "fileBytes": 50057,
+        "webgl2": true,
+        "gpu": "ANGLE (NVIDIA, NVIDIA Quadro RTX 3000 (0x00001F36) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      }
+    }
+  }
+}
