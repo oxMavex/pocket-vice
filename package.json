@@ -1,0 +1,10 @@
+{
+  "name": "pocket-vice",
+  "version": "0.0.1",
+  "private": true,
+  "description": "POCKET VICE: tiny living cities in one HTML file. Tooling for capture and render.",
+  "license": "MIT",
+  "devDependencies": {
+    "playwright": "^1.65.1"
+  }
+}
