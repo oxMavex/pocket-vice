@@ -6,3 +6,8 @@ builds/*/out/frames/
 Thumbs.db
 builds/*/out/check/**/*.png
 builds/*/out/preview/
+
+# private (owner only)
+CLAUDE.md
+posted.md
+builds/*/out/post-*.md
