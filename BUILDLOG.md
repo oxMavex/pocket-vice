@@ -99,3 +99,6 @@
 - Автор всех коммитов переписан на oxMavex <333312077+oxMavex@users.noreply.github.com>, даты коммитов сохранены (filter-branch --env-filter).
 - По решению владельца приватные заметки (план и черновики постов) убраны из истории и добавлены в .gitignore.
 - Добавлены README.md и корневой index.html со списком билдов.
+- Репо: https://github.com/oxMavex/pocket-vice (public). Pages включены с main /, первая сборка: built.
+- 14:41 билд 01 на Pages: https://oxmavex.github.io/pocket-vice/builds/01-clockwork-block/
+- Проверка живой ссылки (Playwright, seed 7): до `__ready` 1381 мс десктоп / 858 мс эмуляция iPhone 13 (с реальной загрузкой three.js с cdnjs), ошибок 0, подпись «1 file · 48.9 KB» (fetch файла = 50 057 байт), лендинг /pocket-vice/ отвечает 200.
