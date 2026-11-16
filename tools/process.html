@@ -1,0 +1,65 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>process composer</title>
+<style>html,body{margin:0;background:#1f1d1a;overflow:hidden}#out{display:block}iframe{position:fixed;left:1200px;top:0;width:540px;height:1080px;border:0}</style>
+</head><body>
+<canvas id="out" width="1080" height="1080"></canvas>
+<iframe id="f"></iframe>
+<script>
+// Composer for process.mp4: left = the build's real source typed out, right = the build itself via __frame(t).
+(async function(){
+  const q=new URLSearchParams(location.search), slug=q.get('b'), fn=q.get('fn')||'evalP', TYPE=+(q.get('type')||9.5);
+  const src=await fetch('/builds/'+slug+'/index.html').then(r=>r.text());
+  const total=src.split('\n').length;
+  const a=src.indexOf('function '+fn+'('), b=src.indexOf('\n}\n',a)+2;
+  const code=src.slice(a,b), line0=src.slice(0,a).split('\n').length;
+  const f=document.getElementById('f');
+  f.src='/builds/'+slug+'/index.html';
+  await new Promise(r=>f.onload=r);
+  const W=f.contentWindow;
+  await new Promise(r=>{const c=()=>W.__ready&&W.__fileBytes?r():setTimeout(c,50);c();});
+
+  const out=document.getElementById('out'), g=out.getContext('2d');
+  const PW=540, FS=15, LH=22, PAD=20, GUT=46, TOP=86;
+  g.font=FS+'px Consolas,ui-monospace,monospace';
+  const cw=g.measureText('M').width, cols=Math.floor((PW-PAD-GUT-PAD)/cw);
+  // colour per character
+  const KW=/\b(const|let|function|return|if|else|while|for|true|false)\b/g, NUM=/\b\d*\.?\d+\b/g, PUN=/[{}()[\];,?:=<>&|+\-*\/]/g, STR=/'[^']*'/g;
+  const colr=new Array(code.length).fill('#e9e2d3');
+  const paint=(re,c)=>{let m;re.lastIndex=0;while((m=re.exec(code)))for(let i=0;i<m[0].length;i++)colr[m.index+i]=c;};
+  paint(PUN,'#9d9484');paint(NUM,'#9cc28a');paint(KW,'#f2b630');paint(STR,'#e98a6d');
+  // visual rows (hard wrap)
+  const rows=[];let pos=0;
+  code.split('\n').forEach((ln,i)=>{if(!ln.length){rows.push({n:line0+i,s:pos,e:pos,first:true});}
+    for(let k=0;k<ln.length;k+=cols)rows.push({n:line0+i,s:pos+k,e:pos+Math.min(ln.length,k+cols),first:k===0});pos+=ln.length+1;});
+  const nRows=Math.floor((1080-TOP-150)/LH);
+
+  window.__proc=function(t){
+    const shown=Math.floor(Math.min(1,Math.max(0,t/TYPE))*code.length);
+    W.__frameNoData(t,{caption:false});
+    g.setTransform(1,0,0,1,0,0);g.fillStyle='#1f1d1a';g.fillRect(0,0,1080,1080);
+    g.drawImage(W.__comp,PW,0,540,1080);
+    // code panel
+    g.fillStyle='#2a2723';g.fillRect(0,0,PW,64);
+    g.font='600 15px Consolas,ui-monospace,monospace';g.fillStyle='#ff5a36';g.fillText('●',PAD,39);
+    g.fillStyle='#e9e2d3';g.fillText('builds/'+slug+'/index.html',PAD+20,39);
+    g.fillStyle='#8f8676';g.textAlign='right';g.fillText('lines '+line0+'–'+(line0+code.split('\n').length-1)+' of '+total,PW-PAD,39);g.textAlign='left';
+    let cur=0;rows.forEach((r,i)=>{if(r.s<=shown)cur=i;});
+    const off=Math.max(0,cur-nRows+4);
+    g.font=FS+'px Consolas,ui-monospace,monospace';
+    for(let i=off;i<rows.length&&i<off+nRows;i++){const r=rows[i],y=TOP+(i-off)*LH+FS;if(r.s>shown)break;
+      if(r.first){g.fillStyle='#5f584d';g.textAlign='right';g.fillText(String(r.n),PAD+GUT-14,y);g.textAlign='left';}
+      const end=Math.min(r.e,shown);for(let k=r.s;k<end;k++){g.fillStyle=colr[k];g.fillText(code[k],PAD+GUT+(k-r.s)*cw,y);}
+      if(i===cur&&(t<TYPE||Math.floor(t*2)%2===0)){g.fillStyle='#ff5a36';g.fillRect(PAD+GUT+(end-r.s)*cw,y-FS+2,cw,FS+3);}}
+    // caption on the code side
+    const cap='Position is a function of time.';
+    g.font='780 27px ui-rounded,"Segoe UI",system-ui,sans-serif';const w=g.measureText(cap).width+44;
+    g.fillStyle='rgba(251,248,241,.96)';g.beginPath();g.roundRect((PW-w)/2,1080-112,w,62,31);g.fill();
+    g.fillStyle='#2b2a27';g.textAlign='center';g.fillText(cap,PW/2,1080-72);g.textAlign='left';
+    g.fillStyle='#000';g.fillRect(PW-1,0,2,1080);
+    return out.toDataURL('image/png');
+  };
+  window.__info={fn,line0,lines:code.split('\n').length,chars:code.length,total,cols};
+  window.__ready=true;
+})();
+</script>
+</body></html>

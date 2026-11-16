@@ -5,3 +5,4 @@ builds/*/out/frames/
 .DS_Store
 Thumbs.db
 builds/*/out/check/**/*.png
+builds/*/out/preview/

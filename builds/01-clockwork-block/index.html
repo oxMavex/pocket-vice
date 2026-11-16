@@ -192,7 +192,7 @@ const near=(list,from,n)=>list.slice().sort((a,b)=>(Math.abs(a.cx-from.cx)+Math.
 // ---------- people & schedules ----------
 const FIRST=['Maya','Leo','Ava','Noah','Zoe','Eli','Iris','Sam','Nora','Owen','Ruby','Jonah','Lena','Theo','Clara','Miles','Hazel','Felix','June','Omar','Priya','Diego','Mei','Kofi','Ana','Ben','Tess','Ravi','Lucy','Marco','Ines','Cal','Wren','Hugo','Sofia','Amir','Jade','Nico','Rosa','Kai','Ellie','Tomas','Yara','Gus','Dina','Ezra','Lola','Ivan','Nell','Raf'];
 const LAST=['Ortiz','Park','Novak','Reyes','Chen','Brooks','Kowalski','Haddad','Bell','Moreno','Kim','Fischer','Okafor','Silva','Patel','Reed','Lindqvist','Duarte','Nakamura','Hart','Price','Abara','Quinn','Sato','Varga','Ellis','Romero','Fox','Iyer','Walsh'];
-const JOBS=['accountant','designer','engineer','clerk','analyst','editor','paralegal','developer','architect','teller','nurse','translator'];
+const JOBS=['accountant','designer','engineer','clerk','analyst','editor','developer','office manager','assistant','copywriter','planner','translator'];
 const SHIRTS=['#3f5e73','#d9a441','#7d9a6a','#c96a4b','#ece6da','#4a4a48','#6f8fa6','#b8846a','#e3c9a0','#5b7552'];
 const SKIN=['#f1c9a5','#e0ac83','#c68863','#8d5a3b','#5c3a26','#f6d6bd'];
 const SPEED=.4; // cells per game-minute
@@ -603,16 +603,29 @@ addEventListener('resize',resize);
 (async()=>{try{const r=await fetch(location.href.split('#')[0],{cache:'force-cache'});const b=await r.blob();$('sig').textContent='1 file · '+(b.size/1024).toFixed(1)+' KB · three.js r128 via CDN';window.__fileBytes=b.size;}catch(_){$('sig').textContent='1 file · three.js r128 via CDN';}})();
 
 // ---------- recording mode ----------
-const LOOP=24,START=H(7);
+const LOOP=30,START=H(7);
+// time warp for the recorded loop: slow morning & evening, fast midday & night (monotone cubic, periodic)
+const TK=[[0,H(7)],[11,H(10)],[14,H(17)],[24,H(21)],[30,H(31)]];
+const TM=(()=>{const d=[];for(let i=0;i<TK.length-1;i++)d.push((TK[i+1][1]-TK[i][1])/(TK[i+1][0]-TK[i][0]));
+  const hm=(a,b)=>2*a*b/(a+b),m=[hm(d[d.length-1],d[0])];for(let i=1;i<TK.length-1;i++)m.push(hm(d[i-1],d[i]));m.push(m[0]);return m;})();
+function warp(t){t=mod(t,LOOP);let i=0;while(i<TK.length-2&&t>TK[i+1][0])i++;
+  const[t0,g0]=TK[i],[t1,g1]=TK[i+1],h=t1-t0,s=(t-t0)/h,s2=s*s,s3=s2*s;
+  return mod(g0*(2*s3-3*s2+1)+h*TM[i]*(s3-2*s2+s)+g1*(-2*s3+3*s2)+h*TM[i+1]*(s3-s2),DAY);}
+let recFade=0;
+// hero = someone walking when tapped who stays outside most of their on-screen window
+function heroFor(w,not){let best=null,bs=-1e9;const g0=warp(w[0])+3;
+  for(const p of people){if(p===not||p.stops<3)continue;evalP(p,g0);if(!p.vis||p.ev[p.ei].k!==1)continue;
+    let v=0;for(let i=0;i<=40;i++){evalP(p,warp(w[0]+(w[1]-w[0])*i/40));if(p.vis)v++;}const s=v*10+p.stops;if(s>bs){bs=s;best=p;}}
+  return best;}
 function heroAt(gm,not){let best=null,bs=-1;for(const p of people){if(p===not)continue;evalP(p,gm);if(!p.vis||p.ev[p.ei].k!==1)continue;const e=p.ev[p.ei];const rem=e.t1-mod(gm,DAY);const s=p.stops*30+p.onFoot*.4+Math.min(rem,60);if(s>bs&&p.stops>=3){bs=s;best=p;}}return best;}
 let hero1=null,hero2=null;
-const WIN=[[.6,11.2],[12.4,22.6]];
+const WIN=[[.6,10.6],[14.4,23.4]];
 window.__duration=LOOP;
 window.__seek=function(t){
   REC=true;document.body.classList.add('rec');
   t=mod(t,LOOP);
-  if(!hero1){hero1=heroAt(START+WIN[0][0]/LOOP*DAY+3);hero2=heroAt(START+WIN[1][0]/LOOP*DAY+3,hero1);}
-  const gm=mod(START+t/LOOP*DAY,DAY);gmNow=gm;
+  if(!hero1){hero1=heroFor(WIN[0]);hero2=heroFor(WIN[1],hero1);}
+  const gm=warp(t);gmNow=gm;
   let f=0,h=null,st=0;
   WIN.forEach((w,i)=>{const ff=sm(w[0],w[0]+.9,t)*(1-sm(w[1]-.9,w[1],t));if(t>=w[0]&&t<w[1]){h=i?hero2:hero1;st=w[0];}f=Math.max(f,ff);});
   if(h!==sel)select(h,st);
@@ -622,10 +635,66 @@ window.__seek=function(t){
   let fz=1;
   if(sel){let x0=1e9,x1=-1e9,z0=1e9,z1=-1e9;for(const e of sel.ev)if(e.k===1)for(const q of e.pts){x0=Math.min(x0,q[0]);x1=Math.max(x1,q[0]);z0=Math.min(z0,q[1]);z1=Math.max(z1,q[1]);}
     view.tx=(x0+x1)/2*f;view.tz=(z0+z1)/2*f;fz=clamp(G*.62/Math.max(x1-x0,z1-z0,4),1,1.8);}else{view.tx=view.tz=0;}
-  view.zoom=1+(fz-1)*f;view.card=f;
+  view.zoom=1+(fz-1)*f;view.card=f;recFade=f;
   render();updateHud(gm);
   return true;
 };
+
+// ---------- recorded frame = WebGL canvas + overlay drawn in 2D (DOM is not in toDataURL) ----------
+const comp=document.createElement('canvas'),g2=comp.getContext('2d');
+const UIF='ui-rounded,"SF Pro Rounded","Segoe UI",system-ui,sans-serif';
+const CAPS=[
+  [.1,3.4,()=>'Tap anyone. See their whole day.'],
+  [3.6,6.6,()=>NP+' people. '+NP+' daily schedules.'],
+  [6.9,10.2,()=>{const n=hero1&&hero1.met?hero1.met.size:0;return hero1.name.split(' ')[0]+' crossed paths with '+n+(n===1?' person.':' people.');}],
+  [14.9,19.6,()=>'Nobody here is scripted by hand.'],
+  [24.4,29.4,()=>'One HTML file. '+((window.__fileBytes||0)/1024).toFixed(1)+' KB.'],
+];
+function rr(x,y,w,h,r){g2.beginPath();g2.roundRect(x,y,w,h,r);}
+function fitText(s,maxw){if(g2.measureText(s).width<=maxw)return s;while(s.length>3&&g2.measureText(s+'…').width>maxw)s=s.slice(0,-1);return s+'…';}
+function compose(t,opt){
+  const W=cv.width,Hh=cv.height,g=g2;if(comp.width!==W||comp.height!==Hh){comp.width=W;comp.height=Hh;}
+  const u=W>=900?W/1080:W/640;
+  g.setTransform(1,0,0,1,0,0);g.globalAlpha=1;g.textAlign='left';g.textBaseline='alphabetic';g.letterSpacing='0px';
+  g.drawImage(cv,0,0);
+  const night=document.body.classList.contains('night'),ink=night?'#f4eee3':'#2b2a27';
+  // tap ripple where the hero gets selected
+  WIN.forEach((w,i)=>{const k=(t-(w[0]-.12))/.75,p=i?hero2:hero1;if(!p||k<=0||k>=1)return;
+    const v=new THREE.Vector3(p.x,.15,p.z).project(cam),sx=(v.x*.5+.5)*W,sy=(-v.y*.5+.5)*Hh;
+    g.strokeStyle='rgba(255,255,255,'+(1-k)+')';g.lineWidth=5*u;g.beginPath();g.arc(sx,sy,(16+70*k)*u,0,7);g.stroke();
+    g.fillStyle='rgba(255,90,54,'+(.55*(1-k))+')';g.beginPath();g.arc(sx,sy,16*u,0,7);g.fill();});
+  // header
+  g.fillStyle=ink;g.globalAlpha=.8;g.font='800 '+17*u+'px '+UIF;g.letterSpacing=3.4*u+'px';g.fillText('POCKET VICE',40*u,58*u);
+  g.globalAlpha=1;g.letterSpacing='0px';g.font='750 '+30*u+'px '+UIF;g.fillText('01 · Clockwork Block',40*u,96*u);
+  const tm=fmtTime(gmNow).split(' ');g.textAlign='right';g.font='700 '+24*u+'px '+UIF;g.fillText(tm[1],W-40*u,96*u);
+  const apw=g.measureText(tm[1]).width;g.font='800 '+62*u+'px '+UIF;g.fillText(tm[0],W-40*u-apw-8*u,96*u);g.textAlign='left';
+  // signature
+  g.globalAlpha=.75;g.font='500 '+17*u+'px ui-monospace,Consolas,monospace';
+  g.fillText('1 file · '+((window.__fileBytes||0)/1024).toFixed(1)+' KB · three.js r128 via CDN',40*u,Hh-30*u);g.globalAlpha=1;
+  // caption (max 6 words)
+  if(opt.caption!==false)for(const c of CAPS){const a=sm(c[0],c[0]+.25,t)*(1-sm(c[1]-.25,c[1],t));if(a<=0)continue;
+    const s=c[2]();g.font='780 '+40*u+'px '+UIF;const w=g.measureText(s).width+60*u,x=(W-w)/2,y=136*u+(1-a)*12*u;
+    g.globalAlpha=a;g.fillStyle='rgba(251,248,241,.96)';g.shadowColor='rgba(40,30,20,.18)';g.shadowBlur=24*u;rr(x,y,w,74*u,37*u);g.fill();g.shadowBlur=0;g.shadowColor='transparent';
+    g.fillStyle='#2b2a27';g.textAlign='center';g.fillText(s,W/2,y+51*u);g.textAlign='left';g.globalAlpha=1;}
+  // hero card
+  if(sel&&recFade>.01){
+    const a=recFade,cw=Math.min(W-48*u,760*u),ch=196*u,x=(W-cw)/2,y=Hh-ch-70*u+(1-a)*36*u;
+    g.globalAlpha=a;g.fillStyle='rgba(251,248,241,.96)';g.shadowColor='rgba(40,30,20,.22)';g.shadowBlur=30*u;g.shadowOffsetY=8*u;rr(x,y,cw,ch,26*u);g.fill();
+    g.shadowColor='transparent';g.shadowBlur=0;g.shadowOffsetY=0;
+    const ax=x+46*u,ay=y+46*u;
+    g.fillStyle='#ff5a36';g.beginPath();g.arc(ax,ay,24*u,0,7);g.fill();g.fillStyle='#fff';g.beginPath();g.arc(ax,ay,21*u,0,7);g.fill();g.fillStyle=sel.shirt;g.beginPath();g.arc(ax,ay,18*u,0,7);g.fill();
+    g.fillStyle='#2b2a27';g.font='780 '+27*u+'px '+UIF;g.fillText(sel.name,x+84*u,y+44*u);
+    g.fillStyle='#7a7468';g.font='500 '+19*u+'px '+UIF;g.fillText(fitText(sel.role,cw-108*u),x+84*u,y+70*u);
+    g.fillStyle='#2b2a27';g.font='680 '+22*u+'px '+UIF;g.fillText(fitText(nowText(sel,gmNow).replace(/<[^>]+>/g,''),cw-48*u),x+24*u,y+112*u);
+    const bx=x+24*u,by=y+128*u,bw=cw-48*u,bh=14*u;g.save();rr(bx,by,bw,bh,7*u);g.clip();g.drawImage($('cBar'),bx,by,bw,bh);g.restore();
+    const hx=bx+mod(gmNow,DAY)/DAY*bw;g.fillStyle='#fff';rr(hx-3.5*u,by-6*u,7*u,bh+12*u,3.5*u);g.fill();g.fillStyle='#2b2a27';rr(hx-2*u,by-4.5*u,4*u,bh+9*u,2*u);g.fill();
+    g.fillStyle='#c23d1f';g.font='700 '+18*u+'px '+UIF;g.fillText(fitText('Crossed paths with '+sel.met.size+' people today · on foot '+fmtDur(sel.onFoot),bw),bx,y+176*u);
+    g.globalAlpha=1;
+  }
+}
+window.__comp=comp;
+window.__frame=function(t,opt){window.__seek(t);compose(mod(t,LOOP),opt||{});return comp.toDataURL('image/png');};
+window.__frameNoData=function(t,opt){window.__seek(t);compose(mod(t,LOOP),opt||{});return true;};
 window.__info=function(){
   const i=renderer.info;
   return {seed:SEED,residents:NP,outsideNow:outside,places:places.length,homes:homes.length,offices:offices.length,cafes:cafes.length,shops:shops.length,parks:parks.length,trees:trees.length,lamps:lampN,
