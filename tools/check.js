@@ -30,7 +30,7 @@ function serve() {
 (async () => {
   const srv = await serve();
   const base = `http://127.0.0.1:${srv.address().port}/builds/${slug}/`;
-  const browser = await chromium.launch({ args: ['--use-angle=d3d11', '--enable-gpu', '--ignore-gpu-blocklist', '--enable-unsafe-swiftshader'] });
+  const browser = await chromium.launch({ args: require('./serve').GPU_ARGS });
   const result = { slug, tag, url: base, when: new Date().toISOString(), runs: {} };
 
   const configs = {
@@ -41,13 +41,14 @@ function serve() {
 
   for (const [name, cfg] of Object.entries(configs)) {
     const ctx = await browser.newContext(cfg);
+    await require('./serve').hook(ctx);
     const page = await ctx.newPage();
     const errors = [];
     page.on('pageerror', e => errors.push(String(e)));
     page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
     const t0 = Date.now();
     await page.goto(base, { waitUntil: 'load' });
-    await page.waitForFunction(() => window.__ready === true, null, { timeout: 15000 });
+    await page.waitForFunction(() => window.__ready === true, null, { timeout: 60000 });
     const loadMs = Date.now() - t0;
     const run = { loadMs, errors };
 

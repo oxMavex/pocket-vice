@@ -17,4 +17,9 @@ function serve() {
     s.listen(0, '127.0.0.1', () => res(s));
   });
 }
-module.exports = { serve, ROOT };
+// GPU flags per platform; THREE_LOCAL=<path to three.min.js r128> serves the CDN file from disk when the network blocks cdnjs.
+const GPU_ARGS = process.platform === 'win32' ? ['--use-angle=d3d11', '--enable-gpu', '--ignore-gpu-blocklist'] : ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'];
+async function hook(target) {
+  if (process.env.THREE_LOCAL) await target.route('**/three.min.js', r => r.fulfill({ path: process.env.THREE_LOCAL, contentType: 'text/javascript' }));
+}
+module.exports = { serve, ROOT, GPU_ARGS, hook };

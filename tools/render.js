@@ -4,14 +4,16 @@ const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
 const { chromium } = require('playwright');
-const { serve, ROOT } = require('./serve');
+const { serve, ROOT, GPU_ARGS, hook } = require('./serve');
+const arg = (k, d) => ((process.argv.find(a => a.startsWith('--' + k + '=')) || '').split('=').slice(1).join('=') || d);
 
 const slug = process.argv[2];
 const what = process.argv[3] || 'all';
 const posterT = +((process.argv.find(a => a.startsWith('--poster=')) || '--poster=2.4').split('=')[1]);
 if (!slug) { console.error('usage: node tools/render.js <NN-slug> [what]'); process.exit(1); }
 const OUT = path.join(ROOT, 'builds', slug, 'out');
-const FPS = 30, SHOW_S = 30, PROC_S = 12;
+const FPS = 30, PROC_S = 12;
+let SHOW_S = 30;
 const save = (file, dataUrl) => fs.writeFileSync(file, Buffer.from(dataUrl.split(',')[1], 'base64'));
 
 function encode(dir, file) {
@@ -26,8 +28,10 @@ function encode(dir, file) {
 (async () => {
   const srv = await serve();
   const base = `http://127.0.0.1:${srv.address().port}`;
-  const browser = await chromium.launch({ args: ['--use-angle=d3d11', '--enable-gpu', '--ignore-gpu-blocklist'] });
-  const page = await (await browser.newContext({ viewport: { width: 1080, height: 1080 }, deviceScaleFactor: 1 })).newPage();
+  const browser = await chromium.launch({ args: GPU_ARGS });
+  const ctx = await browser.newContext({ viewport: { width: 1080, height: 1080 }, deviceScaleFactor: 1 });
+  await hook(ctx);
+  const page = await ctx.newPage();
   const errors = [];
   page.on('pageerror', e => errors.push(String(e)));
   const log = { slug, when: new Date().toISOString(), fps: FPS, errors };
@@ -36,10 +40,11 @@ function encode(dir, file) {
 
   if (['showcase', 'poster', 'preview', 'all'].includes(what)) {
     await page.goto(`${base}/builds/${slug}/index.html`);
-    await page.waitForFunction(() => window.__ready && window.__fileBytes, null, { timeout: 20000 });
+    await page.waitForFunction(() => window.__ready && window.__fileBytes, null, { timeout: 60000 });
+    SHOW_S = await page.evaluate(() => window.__duration);
     if (what === 'preview') {
       const dir = path.join(OUT, 'preview'); fs.mkdirSync(dir, { recursive: true });
-      for (const t of [0, 0.9, 1.4, 5, 8, 12.5, 15.5, 19, 22, 26, 29.9]) save(path.join(dir, `t${t}.png`), await page.evaluate(t => window.__frame(t), t));
+      for (const t of (arg('t', '') ? arg('t').split(',').map(Number) : [0, 0.9, 1.4, 5, 8, 12.5, 15.5, 19, 22, 26, 29.9])) save(path.join(dir, `t${t}.png`), await page.evaluate(t => window.__frame(t), t));
       console.log('preview frames →', dir);
     }
     if (what === 'poster' || what === 'all') {
@@ -63,8 +68,8 @@ function encode(dir, file) {
     }
   }
   if (what === 'process' || what === 'all') {
-    await page.goto(`${base}/tools/process.html?b=${encodeURIComponent(slug)}&fn=evalP&type=9.5`);
-    await page.waitForFunction(() => window.__ready, null, { timeout: 20000 });
+    await page.goto(`${base}/tools/process.html?b=${encodeURIComponent(slug)}&fn=${arg('fn', 'evalP')}&type=9.5&cap=${encodeURIComponent(arg('cap', 'Position is a function of time.'))}`);
+    await page.waitForFunction(() => window.__ready, null, { timeout: 60000 });
     const dir = path.join(OUT, 'frames', 'process'); fs.rmSync(dir, { recursive: true, force: true }); fs.mkdirSync(dir, { recursive: true });
     const n = FPS * PROC_S, t0 = Date.now();
     for (let i = 0; i < n; i++) save(path.join(dir, String(i).padStart(4, '0') + '.png'), await page.evaluate(t => window.__proc(t), i / FPS));
