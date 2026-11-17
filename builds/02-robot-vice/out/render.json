@@ -1,0 +1,69 @@
+{
+  "slug": "02-robot-vice",
+  "when": "2026-11-17T09:44:57.851Z",
+  "fps": 30,
+  "errors": [],
+  "poster": {
+    "t": 0.8
+  },
+  "showcase": {
+    "frames": 900,
+    "seconds": 30,
+    "captureMs": 66021,
+    "encodeMs": 27065,
+    "bytes": 22821499,
+    "probe": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "h264",
+          "width": 1080,
+          "height": 1080,
+          "pix_fmt": "yuv420p",
+          "r_frame_rate": "30/1",
+          "nb_frames": "900"
+        }
+      ],
+      "format": {
+        "duration": "30.000000"
+      }
+    },
+    "loopCheck": {
+      "seam": 5.27,
+      "normal": 1.11
+    }
+  },
+  "process": {
+    "frames": 360,
+    "seconds": 12,
+    "captureMs": 18074,
+    "excerpt": {
+      "fn": "simulateWeek",
+      "line0": 217,
+      "lines": 13,
+      "chars": 584,
+      "total": 608,
+      "cols": 55
+    },
+    "encodeMs": 8959,
+    "bytes": 4449571,
+    "probe": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "h264",
+          "width": 1080,
+          "height": 1080,
+          "pix_fmt": "yuv420p",
+          "r_frame_rate": "30/1",
+          "nb_frames": "360"
+        }
+      ],
+      "format": {
+        "duration": "12.000000"
+      }
+    }
+  }
+}

@@ -51,7 +51,7 @@
       const end=Math.min(r.e,shown);for(let k=r.s;k<end;k++){g.fillStyle=colr[k];g.fillText(code[k],PAD+GUT+(k-r.s)*cw,y);}
       if(i===cur&&(t<TYPE||Math.floor(t*2)%2===0)){g.fillStyle='#ff5a36';g.fillRect(PAD+GUT+(end-r.s)*cw,y-FS+2,cw,FS+3);}}
     // caption on the code side
-    const cap='Position is a function of time.';
+    const cap=q.get('cap')||'Position is a function of time.';
     g.font='780 27px ui-rounded,"Segoe UI",system-ui,sans-serif';const w=g.measureText(cap).width+44;
     g.fillStyle='rgba(251,248,241,.96)';g.beginPath();g.roundRect((PW-w)/2,1080-112,w,62,31);g.fill();
     g.fillStyle='#2b2a27';g.textAlign='center';g.fillText(cap,PW/2,1080-72);g.textAlign='left';

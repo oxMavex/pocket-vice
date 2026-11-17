@@ -8,6 +8,7 @@ const { serve, ROOT } = require('./serve');
 
 const slug = process.argv[2];
 const what = process.argv[3] || 'all';
+const argOf = (k, d) => { const a = process.argv.find(a => a.startsWith('--' + k + '=')); return a ? a.slice(k.length + 3) : d; };
 const posterT = +((process.argv.find(a => a.startsWith('--poster=')) || '--poster=2.4').split('=')[1]);
 if (!slug) { console.error('usage: node tools/render.js <NN-slug> [what]'); process.exit(1); }
 const OUT = path.join(ROOT, 'builds', slug, 'out');
@@ -63,7 +64,7 @@ function encode(dir, file) {
     }
   }
   if (what === 'process' || what === 'all') {
-    await page.goto(`${base}/tools/process.html?b=${encodeURIComponent(slug)}&fn=evalP&type=9.5`);
+    await page.goto(`${base}/tools/process.html?b=${encodeURIComponent(slug)}&fn=${argOf('fn', 'evalP')}&cap=${encodeURIComponent(argOf('cap', 'Position is a function of time.'))}&type=9.5`);
     await page.waitForFunction(() => window.__ready, null, { timeout: 20000 });
     const dir = path.join(OUT, 'frames', 'process'); fs.rmSync(dir, { recursive: true, force: true }); fs.mkdirSync(dir, { recursive: true });
     const n = FPS * PROC_S, t0 = Date.now();

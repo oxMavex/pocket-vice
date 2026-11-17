@@ -63,12 +63,12 @@ function serve() {
         const x = Math.round(vp.width * gx), y = Math.round(vp.height * gy);
         if (cfg.hasTouch) await page.touchscreen.tap(x, y); else await page.mouse.click(x, y);
         await page.waitForTimeout(60);
-        const open = await page.evaluate(() => !document.getElementById('card').classList.contains('hide'));
-        if (open) { await page.waitForTimeout(1200); run.tap = { x, y, name: await page.textContent('#cName'), now: await page.textContent('#cNow'), meet: await page.textContent('#cMeet') }; await page.screenshot({ path: path.join(OUT, name + '-tap.png') }); break outer; }
+        const open = await page.evaluate(() => window.__tapped ? !!window.__tapped() : !document.getElementById('card').classList.contains('hide'));
+        if (open) { await page.waitForTimeout(1200); run.tap = await page.evaluate(([x, y]) => window.__tapped ? { x, y, name: window.__tapped(), tag: (document.getElementById('tag') || {}).textContent } : { x, y, name: document.getElementById('cName').textContent, now: document.getElementById('cNow').textContent, meet: document.getElementById('cMeet').textContent }, [x, y]); await page.screenshot({ path: path.join(OUT, name + '-tap.png') }); break outer; }
       }
     }
     const dur = await page.evaluate(() => window.__duration);
-    const times = [0, 2, dur / 2, dur - 0.1];
+    const times = [0, 1.5, dur / 2, dur - 0.1];
     run.shots = [];
     for (const t of times) {
       await page.evaluate(t => window.__seek(t), t);
