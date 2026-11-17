@@ -24,7 +24,8 @@ const FPS = 30;
     const $ = id => document.getElementById(id), out = [];
     for (let i = 0; i < Math.round(dur * FPS); i++) {
       window.__seek(i / FPS);
-      out.push({ i, t: +(i / FPS).toFixed(4), jobs: +$('sJobs').textContent, bots: +$('sBots').textContent, shut: +$('sShut').textContent,
+      // a build can export its own per-frame state (__tl); otherwise read the HUD counters
+      out.push(window.__tl ? Object.assign({ i, t: +(i / FPS).toFixed(4) }, window.__tl()) : { i, t: +(i / FPS).toFixed(4), jobs: +$('sJobs').textContent, bots: +$('sBots').textContent, shut: +$('sShut').textContent,
         day: $('day').textContent.trim(), clock: $('time').textContent.trim() });
     }
     return out;

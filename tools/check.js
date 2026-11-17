@@ -51,7 +51,22 @@ function serve() {
     const loadMs = Date.now() - t0;
     const run = { loadMs, errors };
 
-    if (name !== 'square') {
+    if (name !== 'square' && await page.evaluate(() => !!window.__playtest)) {
+      // driving build: start the game, steer for real, measure FPS while driving
+      await page.click('#go');
+      await page.waitForTimeout(800);
+      const p0 = await page.evaluate(() => window.__playtest());
+      if (cfg.hasTouch) await page.evaluate(() => { const cv = document.getElementById('c'), o = { pointerId: 7, pointerType: 'touch', clientX: innerWidth * .8, clientY: innerHeight * .6, bubbles: true }; cv.dispatchEvent(new PointerEvent('pointerdown', o)); });
+      else await page.keyboard.down('ArrowRight');
+      run.fps = await page.evaluate(() => new Promise(r => { let n = 0; const s = performance.now(); const f = () => { n++; if (performance.now() - s < 1500) requestAnimationFrame(f); else r(+(n / ((performance.now() - s) / 1000)).toFixed(1)); }; requestAnimationFrame(f); }));
+      const p1 = await page.evaluate(() => window.__playtest());
+      if (cfg.hasTouch) await page.evaluate(() => document.getElementById('c').dispatchEvent(new PointerEvent('pointerup', { pointerId: 7, pointerType: 'touch', bubbles: true })));
+      else await page.keyboard.up('ArrowRight');
+      await page.waitForTimeout(3000);
+      const p2 = await page.evaluate(() => window.__playtest());
+      run.play = { p0, p1, p2, turnedRad: +(p1.me.h - p0.me.h).toFixed(2) };
+      await page.screenshot({ path: path.join(OUT, name + '-live.png') });
+    } else if (name !== 'square') {
       // live FPS: count rAF over 5 s after 1 s warm-up
       await page.waitForTimeout(1000);
       run.fps = await page.evaluate(() => new Promise(r => { let n = 0; const s = performance.now(); const f = () => { n++; if (performance.now() - s < 5000) requestAnimationFrame(f); else r(+(n / ((performance.now() - s) / 1000)).toFixed(1)); }; requestAnimationFrame(f); }));

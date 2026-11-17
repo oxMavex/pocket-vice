@@ -1,0 +1,37 @@
+{
+  "slug": "03-last-fare",
+  "when": "2026-11-17T20:56:33.698Z",
+  "fps": 30,
+  "errors": [],
+  "showcase": {
+    "frames": 600,
+    "seconds": 20,
+    "captureMs": 34742,
+    "encodeMs": 15766,
+    "bytes": 9640381,
+    "probe": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "h264",
+          "width": 1080,
+          "height": 1080,
+          "pix_fmt": "yuv420p",
+          "r_frame_rate": "30/1",
+          "nb_frames": "600"
+        }
+      ],
+      "format": {
+        "duration": "20.000000"
+      }
+    },
+    "loopCheck": {
+      "seam": 59.48,
+      "normal": 0.88
+    }
+  },
+  "poster": {
+    "t": 0.4
+  }
+}

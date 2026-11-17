@@ -1,0 +1,14 @@
+{
+ "events": [
+  "3.0667 bump:me",
+  "4.5 fare:bot",
+  "5.0667 bump:bot",
+  "9.7333 fare:me",
+  "10.1 bump:me",
+  "16.1 fare:me"
+ ],
+ "shifts": 15,
+ "bars": 9,
+ "loudness_in": "-15.08",
+ "bytes": 10160563
+}
