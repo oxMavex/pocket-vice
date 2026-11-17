@@ -217,10 +217,11 @@ function buildDay(p,d,open){
 function simulateWeek(share){
   for(const p of people)p.repl=p.office&&p.u<share;
   let open=new Uint8Array(places.length).fill(1);const base=new Float64Array(places.length);
-  for(const q of places)q.closedOn=99;
+  for(const q of places){q.closedOn=99;q.cust=[];}
   for(let d=0;d<NDAYS;d++){
     const got=new Float64Array(places.length);
     for(const p of people){p.days[d]=buildDay(p,d,open);for(const q of p.spent)got[q.id]++;}
+    for(const q of stores)q.cust[d]=got[q.id];
     if(d===MON)base.set(got);
     const next=open.slice();
     for(const q of stores)if(open[q.id]&&got[q.id]<base[q.id]*.5){next[q.id]=0;q.closedOn=d+1;} // lost half its customers
@@ -442,7 +443,7 @@ function update(T){
   bodies.instanceMatrix.needsUpdate=heads.instanceMatrix.needsUpdate=boxes.instanceMatrix.needsUpdate=true;
   let rc=0,nr=0;
   robots.forEach((r,i)=>{evalR(r,T);
-    if(r.vis){dummy.position.set(r.x,Math.abs(Math.sin(T*9+i))*.008,r.z);dummy.rotation.set(0,r.ang,0);dummy.scale.set(1.3,1.3,1.3);dummy.updateMatrix();
+    if(r.vis){dummy.position.set(r.x,Math.abs(Math.sin(T*9+i))*.008,r.z);dummy.rotation.set(0,r.ang,0);dummy.scale.set(1.45,1.45,1.45);dummy.updateMatrix();
       rBody.setMatrixAt(nr,dummy.matrix);rHead.setMatrixAt(nr,dummy.matrix);rVisor.setMatrixAt(nr,dummy.matrix);rWheel.setMatrixAt(nr,dummy.matrix);nr++;}
     const k=(T-r.t1)/16;if(k>=0&&k<1){const d=r.o.doors[0].d;setI(rings,rc++,d[0],.02,d[1],0,(.6+2.6*k)*(1-k*k));}});
   for(const m of [rBody,rHead,rVisor,rWheel]){m.count=nr;m.instanceMatrix.needsUpdate=true;}
@@ -516,7 +517,7 @@ $('city').textContent=CITY;
 (async()=>{try{const r=await fetch(location.href.split('#')[0],{cache:'force-cache'});const b=await r.blob();$('sig').textContent='1 file · '+(b.size/1024).toFixed(1)+' KB · three.js r128 via CDN';window.__fileBytes=b.size;}catch(_){$('sig').textContent='1 file · three.js r128 via CDN';}})();
 
 // ---------- recording: 30 s loop over Tuesday → Thursday, then a rewind ----------
-const LOOP=30;
+const LOOP=18;
 let KF=null,CK=null;
 function mkWarp(K){const n=K.length,d=[];for(let i=0;i<n-1;i++)d.push((K[i+1][1]-K[i][1])/(K[i+1][0]-K[i][0]));
   const tg=(a,b)=>a*b<=0?0:2*a*b/(a+b),m=[tg(d[n-2],d[0])];for(let i=1;i<n-1;i++)m.push(tg(d[i-1],d[i]));m.push(m[0]);
@@ -526,20 +527,33 @@ let warp=null;
 function recSetup(){
   if(share!==1)setup(1);
   const tr=TUE*DAY+heroOffice.tr,D1=TUE*DAY,D2=WED*DAY,D3=THU*DAY,t0=tr-.6;
-  KF=[[0,t0],[1.6,tr+4.5],[4.2,D1+H(10.4)],[8,D1+H(13.2)],[11.2,D1+H(22.5)],[13,D2+H(7.1)],[15.6,D2+H(9.2)],[16.6,D2+H(12)],[18.4,D3+H(9.7)],[21.4,D3+H(10.6)],[25.8,D3+H(11.6)],[26.4,D3+H(11.9)],[30,t0]];
+  KF=[[0,t0],[1.5,tr+3.5],[3.6,D1+H(11.8)],[5.2,D1+H(12.4)],[6.4,D1+H(13.2)],[7.2,D2+H(7.2)],[9.6,D2+H(9)],[10.6,D3+H(9.7)],[13.8,D3+H(10.8)],[16.4,D3+H(11.6)],[18,t0]];
   warp=mkWarp(KF);
   const door=heroOffice.doors[0].d,cafe=heroCafe?heroCafe.doors[0].d:[0,0];
-  CK=[[0,4.2,door],[1.1,4.2,door],[3.8,1,[0,0]],[12.6,1,[0,0]],[14,3.3,cafe],[16.3,3.3,cafe],[17.4,1,[0,0]],[18.3,1,[0,0]],[19.6,2.7,'park'],[21.6,2.7,'park'],[22.6,2.8,'rosa'],[25.6,2.8,'rosa'],[26.8,1,[0,0]],[27.4,1,[0,0]],[30,4.2,door]];
+  CK=[[0,5,door],[1,5,door],[3,1.15,[0,0]],[4.4,1.15,[0,0]],[5.6,3,cafe],[7.6,3,cafe],[8.6,1.4,[0,0]],[9.8,1.4,[0,0]],[10.8,2.9,'park'],[12.4,2.9,'park'],[13,3.1,'rosa'],[15.2,3.1,'rosa'],[16.2,1.05,[0,0]],[16.4,1.05,[0,0]],[18,5,door]];
 }
 const tgtOf=k=>k==='park'?(parkHot?[parkHot.x,parkHot.z]:[0,0]):k==='rosa'?(rosa&&rosa.vis?[rosa.x,rosa.z]:heroCafe?heroCafe.doors[0].d:[0,0]):k;
-let recT=0,recRew=0;
+let recT=0,recRew=0,splitA=0,lunchCafe=null,splitN=[0,0];
+// Monday vs Tuesday at the same café, same minute
+const splitC=document.createElement('canvas'),sg=splitC.getContext('2d'),SPLIT=[3.3,6.3];
+function nearCafe(c,T){let n=0;const d=c.doors[0].d;for(const p of people){evalP(p,T);if(p.vis&&Math.hypot(p.x-d[0],p.z-d[1])<2.6)n++;}return n;}
+function renderSplit(t){
+  const W=cv.width,Hh=cv.height;if(splitC.width!==W||splitC.height!==Hh){splitC.width=W;splitC.height=Hh;}
+  if(!lunchCafe){lunchCafe=cafes.slice().sort((a,b)=>(b.cust[MON]-b.cust[TUE])-(a.cust[MON]-a.cust[TUE]))[0];let bn=-1;for(let m=H(11.6);m<=H(13.4);m+=3){const n=nearCafe(lunchCafe,MON*DAY+m);if(n>bn){bn=n;splitN.g0=m;}}}
+  const gm=splitN.g0-12+(t-SPLIT[0])*8,d=lunchCafe.doors[0].d;
+  [MON,TUE].forEach((day,k)=>{T=day*DAY+gm;update(T);setLight(T);splitN[k]=lunchCafe.cust[day];
+    view.tx=d[0];view.tz=d[1];view.zoom=3.2;view.el=1.12;view.az=Math.PI*.25;render();sg.drawImage(cv,W/4,0,W/2,Hh,k*W/2,0,W/2,Hh);
+    const v=new THREE.Vector3(lunchCafe.x,.3,lunchCafe.z).project(cam),sx=(v.x*.5+.5)*W-W/4+k*W/2,sy=(-v.y*.5+.5)*Hh,u=W/1080;
+    sg.strokeStyle='#ff5a36';sg.lineWidth=6*u;sg.beginPath();sg.arc(sx,sy,62*u,0,7);sg.stroke();});
+  splitN.gm=gm;
+}
 window.__duration=LOOP;
 window.__seek=function(t){
   REC=true;document.body.classList.add('rec');if(!warp)recSetup();
-  t=mod(t,LOOP);recT=t;T=warp(t);recRew=t>26.4?sm(26.4,26.8,t)*(1-sm(29.4,29.9,t)):0;
+  t=mod(t,LOOP);splitA=sm(SPLIT[0],SPLIT[0]+.3,t)*(1-sm(SPLIT[1]-.3,SPLIT[1],t));if(splitA>0)renderSplit(t);recT=t;T=warp(t);recRew=t>16.4?sm(16.4,16.7,t)*(1-sm(17.5,17.9,t)):0;
   update(T);setLight(T);
   let i=0;while(i<CK.length-2&&t>CK[i+1][0])i++;const a=CK[i],b=CK[i+1],s=sm(a[0],b[0],t),pa=tgtOf(a[2]),pb=tgtOf(b[2]);
-  view.zoom=lerp(a[1],b[1],s);view.tx=lerp(pa[0],pb[0],s);view.tz=lerp(pa[1],pb[1],s);view.az=Math.PI*.25+.22*Math.sin(2*Math.PI*t/LOOP);view.el=.62+.3*(1-sm(1.1,3.8,t))+.3*sm(27.4,30,t);
+  view.zoom=lerp(a[1],b[1],s);view.tx=lerp(pa[0],pb[0],s);view.tz=lerp(pa[1],pb[1],s);view.az=Math.PI*.25+.22*Math.sin(2*Math.PI*t/LOOP);view.el=.62+.3*(1-sm(1,3,t))+.3*sm(16.4,18,t);
   render();updateHud(T);return true;
 };
 
@@ -550,32 +564,35 @@ function cap(){const S=SUM,cw=cafes.filter(q=>q.closedOn===WED).length,sw=shops.
   const what=sw===0?(cw===1?'café':'cafés'):cw===0?(sw===1?'shop':'shops'):'places';
   const lost=statsAt(THU*DAY+H(12.2));
   return[
-  [.15,3.7,'Robots took every office job.'],
-  [4.3,7.7,"Robots don't buy lunch."],
-  [8.3,11.4,'Robots work all night.'],
-  [13.2,16.3,n?'Wednesday: '+n+' '+what+' closed.':'Wednesday: everything still open.'],
-  [18.5,21.6,'Thursday: '+S.parkThu+' people in the park.'],
-  [22.2,24.7,rosa?'No robot took '+rosa.first+"'s job.":'Nobody here was replaced.'],
-  [24.9,27.5,lost.bots+' robots. '+(S.workers-lost.jobs)+' jobs gone.']];}
+  [.1,2.9,'Robots took every office job.'],
+  [3.4,5.9,"Robots don't buy lunch."],
+  [8.5,10.3,n?'Wednesday: '+n+' '+what+' closed.':'Wednesday: everything still open.'],
+  [10.6,12.9,'Thursday: '+S.parkThu+' people in the park.'],
+  [13.1,15.3,rosa?'No robot took '+rosa.first+"'s job.":'Nobody here was replaced.'],
+  [15.5,17,lost.bots+' robots. '+(S.workers-lost.jobs)+' jobs gone.']];}
 function rr(x,y,w,h,r){g2.beginPath();g2.roundRect(x,y,w,h,r);}
 function compose(t,opt){
   const W=cv.width,Hh=cv.height,g=g2;if(comp.width!==W||comp.height!==Hh){comp.width=W;comp.height=Hh;}
   const u=W>=900?W/1080:W/640;
   g.setTransform(1,0,0,1,0,0);g.globalAlpha=1;g.textAlign='left';g.textBaseline='alphabetic';g.letterSpacing='0px';g.shadowBlur=0;g.shadowColor='transparent';
   g.drawImage(cv,0,0);
+  if(splitA>0){g.globalAlpha=splitA;g.drawImage(splitC,0,0);g.fillStyle='#fbf8f1';g.fillRect(W/2-3*u,0,6*u,Hh);
+    [['MONDAY',splitN[0],'#2b2a27'],['TUESDAY',splitN[1],'#ff5a36']].forEach((c,k)=>{const cx=k*W/2+W/4;g.textAlign='center';
+      g.fillStyle='rgba(251,248,241,.95)';rr(cx-185*u,236*u,370*u,104*u,22*u);g.fill();g.fillStyle=c[2];g.font='800 '+20*u+'px '+UIF;g.letterSpacing=3*u+'px';g.fillText(c[0]+' · '+lunchCafe.name.toUpperCase(),cx,272*u);g.letterSpacing='0px';
+      g.font='800 '+34*u+'px '+UIF;g.fillText(c[1]+' customers',cx,318*u);});g.textAlign='left';g.globalAlpha=1;}
   const night=document.body.classList.contains('night'),ink=night?'#f4eee3':'#2b2a27',mut=night?'#c9c2b5':'#7a7468';
   const gr=g.createLinearGradient(0,0,0,230*u);gr.addColorStop(0,night?'rgba(38,40,46,.82)':'rgba(236,230,217,.9)');gr.addColorStop(.7,night?'rgba(38,40,46,.5)':'rgba(236,230,217,.55)');gr.addColorStop(1,'rgba(236,230,217,0)');g.fillStyle=gr;g.fillRect(0,0,W,230*u);
   g.fillStyle=ink;g.globalAlpha=.8;g.font='800 '+17*u+'px '+UIF;g.letterSpacing=3.4*u+'px';g.fillText('ROBOT VICE',40*u,58*u);
   g.globalAlpha=1;g.letterSpacing='0px';g.font='750 '+30*u+'px '+UIF;g.fillText(CITY,40*u,96*u);
-  const s=statsAt(T),cols=[[s.jobs,'PEOPLE WITH JOBS',ink],[s.bots,'ROBOTS',ink],[s.shut,'CLOSED','#ff5a36']];let x=40*u;
-  for(const c of cols){g.fillStyle=c[2];g.font='800 '+40*u+'px '+UIF;g.fillText(String(c[0]),x,150*u);const w1=g.measureText(String(c[0])).width;
-    g.fillStyle=mut;g.font='750 '+13*u+'px '+UIF;g.letterSpacing=1.2*u+'px';g.fillText(c[1],x,172*u);const w2=g.measureText(c[1]).width;g.letterSpacing='0px';x+=Math.max(w1,w2)+30*u;}
+  const s=statsAt(T),drop=statsAt(warp(t-.35)).jobs>s.jobs,cols=[[s.jobs,'PEOPLE WITH JOBS',drop?'#ff5a36':ink,66],[s.bots,'ROBOTS',ink,40],[s.shut,'CLOSED','#ff5a36',40]];let x=40*u;
+  for(const c of cols){g.fillStyle=c[2];g.font='800 '+c[3]*u+'px '+UIF;g.fillText(String(c[0]),x,160*u);const w1=g.measureText(String(c[0])).width;
+    g.fillStyle=mut;g.font='750 '+13*u+'px '+UIF;g.letterSpacing=1.2*u+'px';g.fillText(c[1],x,184*u);const w2=g.measureText(c[1]).width;g.letterSpacing='0px';x+=Math.max(w1,w2)+30*u;}
   const tm=fmtTime(T).split(' ');g.fillStyle=ink;g.textAlign='right';g.font='800 '+17*u+'px '+UIF;g.letterSpacing=3*u+'px';g.globalAlpha=.85;g.fillText(DAYL[dayOf(T)].toUpperCase(),W-40*u,58*u);g.letterSpacing='0px';g.globalAlpha=1;
   g.font='700 '+24*u+'px '+UIF;g.fillText(tm[1],W-40*u,104*u);const apw=g.measureText(tm[1]).width;g.font='800 '+58*u+'px '+UIF;g.fillText(tm[0],W-40*u-apw-8*u,104*u);
   if(recRew>0){g.globalAlpha=recRew;g.fillStyle='#ff5a36';rr(W-40*u-150*u,122*u,150*u,40*u,20*u);g.fill();g.fillStyle='#fff';g.font='800 '+19*u+'px '+UIF;g.fillText('◀◀ REWIND',W-56*u,149*u);g.globalAlpha=1;}
   g.textAlign='left';
   // the person the camera follows on Thursday
-  if(rosa&&rosa.vis&&t>21.8&&t<26.4){const a=sm(21.8,22.4,t)*(1-sm(26,26.4,t)),v=new THREE.Vector3(rosa.x,.42,rosa.z).project(cam),sx=(v.x*.5+.5)*W,sy=(-v.y*.5+.5)*Hh;
+  if(rosa&&rosa.vis&&t>12.9&&t<15.8){const a=sm(12.9,13.4,t)*(1-sm(15.3,15.8,t)),v=new THREE.Vector3(rosa.x,.42,rosa.z).project(cam),sx=(v.x*.5+.5)*W,sy=(-v.y*.5+.5)*Hh;
     const l1=rosa.name,l2=(rosa.role.split(' at ')[0])+' · out of work';g.font='780 '+22*u+'px '+UIF;const w1=g.measureText(l1).width;g.font='650 '+17*u+'px '+UIF;const w2=g.measureText(l2).width;
     const bw=Math.max(w1,w2)+32*u,bh=66*u,bx=sx-bw/2,by=sy-bh-22*u;
     g.globalAlpha=a;g.fillStyle='rgba(251,248,241,.97)';g.shadowColor='rgba(40,30,20,.22)';g.shadowBlur=20*u;rr(bx,by,bw,bh,16*u);g.fill();g.shadowBlur=0;g.shadowColor='transparent';
@@ -594,6 +611,7 @@ window.__frame=function(t,opt){window.__seek(t);compose(mod(t,LOOP),opt||{});ret
 window.__frameNoData=function(t,opt){window.__seek(t);compose(mod(t,LOOP),opt||{});return true;};
 window.__tapped=()=>sel?sel.name:null;
 window.__curve=function(){const out=[];for(let s=0;s<=10;s++){setup(s/10);out.push(Object.assign({},SUM));}setup(1);return out;};
+window.__split=()=>cafes.map(q=>({cafe:q.name,cust:q.cust.slice(),closedOn:DAYN[q.closedOn]||'-',lunch:q===lunchCafe}));
 window.__info=function(){const i=renderer.info;
   return Object.assign({seed:SEED,city:CITY,residents:NP,places:places.length,offices:offices.length,cafes:cafes.length,shops:shops.length,parks:parks.length,trees:trees.length,
     heroOffice:heroOffice.name,heroCafe:heroCafe&&heroCafe.name,rosa:rosa&&(rosa.name+' · '+rosa.role),drawCalls:i.render.calls,triangles:i.render.triangles,fps:fps.length,fileBytes:window.__fileBytes||null,webgl2:GL2,

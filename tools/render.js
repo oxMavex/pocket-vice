@@ -12,7 +12,8 @@ const argOf = (k, d) => { const a = process.argv.find(a => a.startsWith('--' + k
 const posterT = +((process.argv.find(a => a.startsWith('--poster=')) || '--poster=2.4').split('=')[1]);
 if (!slug) { console.error('usage: node tools/render.js <NN-slug> [what]'); process.exit(1); }
 const OUT = path.join(ROOT, 'builds', slug, 'out');
-const FPS = 30, SHOW_S = 30, PROC_S = 12;
+const FPS = 30, PROC_S = 12;
+let SHOW_S = 30;
 const save = (file, dataUrl) => fs.writeFileSync(file, Buffer.from(dataUrl.split(',')[1], 'base64'));
 
 function encode(dir, file) {
@@ -40,7 +41,7 @@ function encode(dir, file) {
     await page.waitForFunction(() => window.__ready && window.__fileBytes, null, { timeout: 20000 });
     if (what === 'preview') {
       const dir = path.join(OUT, 'preview'); fs.mkdirSync(dir, { recursive: true });
-      for (const t of [0, 0.9, 1.4, 5, 8, 12.5, 15.5, 19, 22, 26, 29.9]) save(path.join(dir, `t${t}.png`), await page.evaluate(t => window.__frame(t), t));
+      for (const t of [0, 0.9, 1.4, 4.5, 6.5, 7.8, 8.8, 11.5, 14, 16.2, 17.9]) save(path.join(dir, `t${t}.png`), await page.evaluate(t => window.__frame(t), t));
       console.log('preview frames →', dir);
     }
     if (what === 'poster' || what === 'all') {
@@ -48,6 +49,7 @@ function encode(dir, file) {
       log.poster = { t: posterT };
     }
     if (what === 'showcase' || what === 'all') {
+      SHOW_S = Math.round(await page.evaluate(() => window.__duration || 30));
       const dir = path.join(OUT, 'frames', 'showcase'); fs.rmSync(dir, { recursive: true, force: true }); fs.mkdirSync(dir, { recursive: true });
       const n = FPS * SHOW_S, t0 = Date.now();
       for (let i = 0; i < n; i++) save(path.join(dir, String(i).padStart(4, '0') + '.png'), await page.evaluate(t => window.__frame(t), i / FPS));

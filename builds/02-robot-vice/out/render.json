@@ -1,17 +1,17 @@
 {
   "slug": "02-robot-vice",
-  "when": "2026-11-17T09:44:57.851Z",
+  "when": "2026-11-17T10:22:53.417Z",
   "fps": 30,
   "errors": [],
   "poster": {
-    "t": 0.8
+    "t": 1.4
   },
   "showcase": {
-    "frames": 900,
-    "seconds": 30,
-    "captureMs": 66021,
-    "encodeMs": 27065,
-    "bytes": 22821499,
+    "frames": 540,
+    "seconds": 18,
+    "captureMs": 41995,
+    "encodeMs": 17396,
+    "bytes": 15418091,
     "probe": {
       "programs": [],
       "stream_groups": [],
@@ -22,32 +22,32 @@
           "height": 1080,
           "pix_fmt": "yuv420p",
           "r_frame_rate": "30/1",
-          "nb_frames": "900"
+          "nb_frames": "540"
         }
       ],
       "format": {
-        "duration": "30.000000"
+        "duration": "18.000000"
       }
     },
     "loopCheck": {
-      "seam": 5.27,
-      "normal": 1.11
+      "seam": 9.09,
+      "normal": 1.03
     }
   },
   "process": {
     "frames": 360,
     "seconds": 12,
-    "captureMs": 18074,
+    "captureMs": 20390,
     "excerpt": {
       "fn": "simulateWeek",
       "line0": 217,
-      "lines": 13,
-      "chars": 584,
-      "total": 608,
+      "lines": 14,
+      "chars": 643,
+      "total": 626,
       "cols": 55
     },
-    "encodeMs": 8959,
-    "bytes": 4449571,
+    "encodeMs": 9857,
+    "bytes": 5879152,
     "probe": {
       "programs": [],
       "stream_groups": [],
