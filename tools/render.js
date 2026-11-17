@@ -41,7 +41,7 @@ function encode(dir, file) {
     await page.waitForFunction(() => window.__ready && window.__fileBytes, null, { timeout: 20000 });
     if (what === 'preview') {
       const dir = path.join(OUT, 'preview'); fs.mkdirSync(dir, { recursive: true });
-      for (const t of [0, 0.9, 1.4, 4.5, 6.5, 7.8, 8.8, 11.5, 14, 16.2, 17.9]) save(path.join(dir, `t${t}.png`), await page.evaluate(t => window.__frame(t), t));
+      for (const t of [0, 1.2, 4.6, 7.6, 9.2, 11.2, 12, 13.6, 15.4, 17, 18.9]) save(path.join(dir, `t${t}.png`), await page.evaluate(t => window.__frame(t), t));
       console.log('preview frames →', dir);
     }
     if (what === 'poster' || what === 'all') {
