@@ -1,0 +1,126 @@
+{
+  "slug": "02-robot-shift",
+  "tag": "r1",
+  "url": "http://127.0.0.1:39703/builds/02-robot-shift/",
+  "when": "2026-11-17T01:09:04.346Z",
+  "runs": {
+    "desktop": {
+      "loadMs": 742,
+      "errors": [],
+      "fps": 7,
+      "tap": {
+        "x": 448,
+        "y": 240,
+        "name": "Jonah Moreno",
+        "now": "Walking to Lantern Games Annex · arrives 8:12 AM",
+        "meet": "Robots take this job at 47%on foot 2h 24m"
+      },
+      "shots": [
+        "desktop-t0_0.png",
+        "desktop-t2_0.png",
+        "desktop-t12_0.png",
+        "desktop-t23_9.png"
+      ],
+      "seekMs": 1.1,
+      "info": {
+        "seed": 7,
+        "residents": 210,
+        "jobs": 186,
+        "robots": 166,
+        "robotJobsNow": 4,
+        "botsOutNow": 2,
+        "outsideNow": 5,
+        "places": 186,
+        "homes": 144,
+        "offices": 31,
+        "cafes": 6,
+        "shops": 3,
+        "parks": 2,
+        "trees": 40,
+        "lamps": 36,
+        "drawCalls": 43,
+        "triangles": 73076,
+        "fps": 4,
+        "fileBytes": 61066,
+        "webgl2": true,
+        "gpu": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)"
+      }
+    },
+    "mobile": {
+      "loadMs": 446,
+      "errors": [],
+      "fps": 8.7,
+      "tap": {
+        "x": 98,
+        "y": 199,
+        "name": "Jonah Moreno",
+        "now": "Walking to Lantern Games Annex · arrives 8:12 AM",
+        "meet": "Robots take this job at 47%on foot 2h 24m"
+      },
+      "shots": [
+        "mobile-t0_0.png",
+        "mobile-t2_0.png",
+        "mobile-t12_0.png",
+        "mobile-t23_9.png"
+      ],
+      "seekMs": 0.9,
+      "info": {
+        "seed": 7,
+        "residents": 210,
+        "jobs": 186,
+        "robots": 166,
+        "robotJobsNow": 4,
+        "botsOutNow": 2,
+        "outsideNow": 5,
+        "places": 186,
+        "homes": 144,
+        "offices": 31,
+        "cafes": 6,
+        "shops": 3,
+        "parks": 2,
+        "trees": 40,
+        "lamps": 36,
+        "drawCalls": 43,
+        "triangles": 73076,
+        "fps": 5,
+        "fileBytes": 61066,
+        "webgl2": true,
+        "gpu": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)"
+      }
+    },
+    "square": {
+      "loadMs": 459,
+      "errors": [],
+      "shots": [
+        "square-t0_0.png",
+        "square-t2_0.png",
+        "square-t12_0.png",
+        "square-t23_9.png"
+      ],
+      "seekMs": 1.4,
+      "info": {
+        "seed": 7,
+        "residents": 210,
+        "jobs": 186,
+        "robots": 166,
+        "robotJobsNow": 4,
+        "botsOutNow": 2,
+        "outsideNow": 5,
+        "places": 186,
+        "homes": 144,
+        "offices": 31,
+        "cafes": 6,
+        "shops": 3,
+        "parks": 2,
+        "trees": 40,
+        "lamps": 36,
+        "drawCalls": 43,
+        "triangles": 73076,
+        "fps": 3,
+        "fileBytes": 61066,
+        "webgl2": true,
+        "gpu": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)"
+      }
+    }
+  }
+}

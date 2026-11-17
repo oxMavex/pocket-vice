@@ -5,6 +5,7 @@ Tiny living cities, one HTML file each. You don't play a criminal, you play the 
 | # | Build | Play | Size |
 |---|-------|------|------|
 | 01 | Clockwork Block: 210 people, each with their own daily schedule. Tap anyone to see their day. | [play](https://oxmavex.github.io/pocket-vice/builds/01-clockwork-block/) | 48.9 KB + three.js r128 (CDN) |
+| 02 | Robot Shift: the same 210 people, 186 jobs and one slider that hands the jobs to robots. Toy model, assumptions listed in BUILDLOG. | [play](https://oxmavex.github.io/pocket-vice/builds/02-robot-shift/) | 59.6 KB + three.js r128 (CDN) |
 
 Add `?seed=<any number>` to a build URL to get your own city.
 

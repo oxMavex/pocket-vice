@@ -288,6 +288,7 @@ for(const p of people){
 // ---------- robot shift: who gets replaced, in what order (toy model, my assumptions) ----------
 // lower number = robots take this job earlier. this ordering is a guess, not data.
 const RISK={cashier:.1,'night guard':.15,barista:.2,clerk:.25,shopkeeper:.3,'late-shift cook':.3,assistant:.3,baker:.35,accountant:.4,translator:.45,analyst:.5,copywriter:.55,'office manager':.6,'works from home':.6,planner:.65,editor:.7,developer:.75,designer:.8,engineer:.85};
+// a replaced worker with no income buys nothing; with UBI they go out for a walk and a coffee. that one switch flips the cafe result.
 const RSPD=.6,DOCK=5; // robot speed in cells per game-minute
 const docks=[[0,0],[G-1,0],[0,G-1],[G-1,G-1]].map((c,i)=>({id:9000+i,kind:DOCK,cx:c[0],cz:c[1],x:W(c[0]),z:W(c[1]),name:'charging dock',doors:[{d:[W(c[0]),W(c[1])],rc:c}]}));
 function planner(p,cur,t){
@@ -308,9 +309,10 @@ const J=workers.length;
 const pctOf=p=>Math.ceil((p.rank+1)/J*100);
 // the simulated day is the day the robots clock in: a replaced worker still walks to work,
 // hands the job over when the robot arrives, walks home and (without UBI) spends nothing.
-// mode: 0 = no income, 1 = UBI (keeps going out), -1 = bare fallback
+// mode: 0 = no income, 1 = UBI (keeps going out), -1 = bare fallback, -2 = stays home
 function laidPlan(p,mode){
   const end=p.T0+DAY,H0=p.home,pl=planner(p,H0,p.T0);
+  if(mode===-2){pl.stay(end);return pl.ev;}
   if(p.arch==='dog'){ // remote job goes to software: no robot shows up
     if(mode===1)return p.ev0;
     pl.stay(H(rf(6.1,7.4)));pl.visit(pick(near(parks,H0,2)),rf(25,45),'dog');pl.go(H0);
@@ -330,7 +332,7 @@ for(const p of workers){
     const e=p.ev0.find(e=>e.k===1&&e.to===p.job);
     p.leave=e.t0;p.hand=e.t1+rf(6,20);p.out=p.hand+rf(3,5);
   }
-  p.evL=laidPlan(p,0)||laidPlan(p,-1);p.evU=laidPlan(p,1)||p.evL;
+  p.evL=laidPlan(p,0)||laidPlan(p,-1)||laidPlan(p,-2);p.evU=laidPlan(p,1)||p.evL;
   if(p.arch==='dog')continue;
   // one robot per replaced on-site job: rolls in from the nearest charging dock, works ~21 h, makes delivery runs
   const dock=near(docks,p.job,1)[0];
@@ -541,12 +543,10 @@ const stopMat=new THREE.MeshBasicMaterial({color:ACC,transparent:true,depthWrite
 const stops=inst(new THREE.CircleGeometry(.12,20).rotateX(-Math.PI/2),stopMat,16,{cast:false,recv:false});stops.renderOrder=4;
 const dotMat=new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,depthWrite:false});
 const stopDots=inst(new THREE.CircleGeometry(.05,16).rotateX(-Math.PI/2),dotMat,16,{cast:false,recv:false});stopDots.renderOrder=5;
-const metMat=new THREE.MeshBasicMaterial({color:0xfff6e4,transparent:true,depthWrite:false});
-const metRings=inst(new THREE.RingGeometry(.09,.125,20).rotateX(-Math.PI/2),metMat,NP,{cast:false,recv:false});metRings.renderOrder=3;
-[ring,pin,route,routeO,stops,stopDots,metRings].forEach(o=>o.visible=false);
+[ring,pin,route,routeO,stops,stopDots].forEach(o=>o.visible=false);
 
 // ---------- selection ----------
-let sel=null,selStart=0,routeQuads=0,metSet=new Set();
+let sel=null,selStart=0,routeQuads=0;
 const CATC={home:'#d8ccb6',work:'#5f7f95',errand:'#e2a53a',park:'#7fa268',walk:'#8a8478'};
 function catOf(e){if(e.k===1)return'walk';const k=e.pl.kind;return k===HOME?'home':k===PARK?'park':(k===WORK||e.why==='work'||e.pl===sel.job)?'work':'errand';}
 function buildRoute(p){
@@ -570,7 +570,7 @@ function drawBar(p){
 }
 function select(p,now){
   sel=p;selStart=now;
-  if(!p){[ring,pin,route,routeO,stops,stopDots,metRings].forEach(o=>o.visible=false);$('card').classList.add('hide');return;}
+  if(!p){[ring,pin,route,routeO,stops,stopDots].forEach(o=>o.visible=false);$('card').classList.add('hide');return;}
   buildRoute(p);[ring,pin,route,routeO,stops,stopDots].forEach(o=>o.visible=true);
   $('cName').textContent=p.name;$('cRole').textContent=p.role;$('cAv').style.background=p.shirt;
   drawBar(p);
@@ -802,7 +802,7 @@ function compose(t,opt){
   g.fillStyle='#2b2a27';g.font='800 '+21*u+'px '+UIF;g.letterSpacing=2.4*u+'px';g.fillText('ROBOTS DO',x,yb-4*u);x+=g.measureText('ROBOTS DO').width+14*u;
   g.letterSpacing='0px';g.fillStyle='#ff5a36';g.font='800 '+50*u+'px '+UIF;g.fillText(r+'%',x,yb);x+=g.measureText(r+'%').width+16*u;
   g.fillStyle='#2b2a27';g.font='800 '+21*u+'px '+UIF;g.letterSpacing=2.4*u+'px';g.fillText('OF JOBS',x,yb-4*u);g.letterSpacing='0px';
-  g.textAlign='right';g.fillStyle='#7a7468';g.font='650 '+20*u+'px '+UIF;g.fillText('jobs: '+nBots+' robot · '+(J-nBots)+' human',px+pw-28*u,yb-4*u);g.textAlign='left';
+  g.textAlign='right';g.fillStyle='#7a7468';g.font='650 '+20*u+'px '+UIF;if(W>=900)g.fillText('jobs: '+nBots+' robot · '+(J-nBots)+' human',px+pw-28*u,yb-4*u);g.textAlign='left';
   const bx=px+28*u,bw=pw-56*u,by=py+78*u,bh=16*u,kx=bx+bw*r/100;
   g.fillStyle='rgba(43,42,39,.13)';rr(bx,by,bw,bh,bh/2);g.fill();
   if(r>0){g.fillStyle='#ff5a36';rr(bx,by,Math.max(bh,bw*r/100),bh,bh/2);g.fill();}
