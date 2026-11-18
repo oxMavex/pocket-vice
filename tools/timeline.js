@@ -17,7 +17,7 @@ const FPS = 30;
   const page = await (await browser.newContext({ viewport: { width: 540, height: 540 } })).newPage();
   const errors = [];
   page.on('pageerror', e => errors.push(String(e)));
-  await page.goto(`${base}/builds/${slug}/index.html`);
+  await page.goto(`${base}/builds/${slug}/index.html${process.argv[3] ? '?' + process.argv[3] : ''}`); // optional query, e.g. demo
   await page.waitForFunction(() => window.__ready === true, null, { timeout: 60000 });
   const dur = await page.evaluate(() => window.__duration || 30);
   const frames = await page.evaluate(({ dur, FPS }) => {

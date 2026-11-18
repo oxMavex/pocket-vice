@@ -24,7 +24,7 @@ function add(b, t0, len, pan, gain, fn) {
 }
 // per-sample value of a timeline field, linearly interpolated between frames
 const at = (key, t) => { const x = Math.min(F.length - 1.001, Math.max(0, t * FPS)), i = Math.floor(x), k = x - i, a = F[i][key], b = F[Math.min(F.length - 1, i + 1)][key]; return a + (b - a) * k; };
-const events = []; for (const f of F) for (const e of f.ev) events.push([f.t, e]);
+const events = []; for (const f of F) for (const e of f.ev) if (!events.some(x => x[1] === e && f.t - x[0] < .1)) events.push([f.t, e]); // a build may report one event on two frames
 
 const B = { eng: bus(), bot: bus(), tyre: bus(), fx: bus(), mus: bus() };
 
@@ -83,6 +83,10 @@ for (const [t, e] of events) {
   if (e === 'fare:bot') { add(B.fx, t, .2, -.3, .1, beep(1046)); add(B.fx, t + .14, .2, -.3, .1, beep(1396)); }
   if (e.startsWith('bump:')) add(B.fx, t, .4, 0, .35, thud());
   if (e === 'title') for (const [k, n] of [[0, 64], [.12, 71], [.24, 76], [.36, 79]]) add(B.fx, t + k, 1.2, 0, .09, mar(mf(n)));
+  if (e === 'pass') { for (const [k, n] of [[0, 64], [.12, 68], [.24, 71], [.36, 76], [.6, 80]]) add(B.fx, t + k, 1.4, 0, .12, mar(mf(n))); add(B.fx, t, 1, 0, .4, kick()); }
+  if (e === 'cp') { add(B.fx, t, .25, 0, .09, mar(mf(88))); add(B.fx, t + .07, .25, 0, .07, mar(mf(95))); }
+  if (e === 'spray') { const f = lp(6000), g = lp(900); add(B.fx, t, 1.4, .2, .16, u => (f(rnd() * 2 - 1) - g(rnd() * 2 - 1) * .5) * Math.sin(Math.PI * Math.min(1, u / 1.4))); }
+  if (e === 'door') add(B.fx, t, .4, 0, .3, thud());
   if (e === 'fail') { for (const [k, n] of [[.15, 67], [.4, 63], [.65, 58], [.9, 55]]) add(B.fx, t + k, 1.6, 0, .13, mar(mf(n))); add(B.fx, t + .15, 2.2, 0, .45, kick()); }
 }
 // ---------- toy-funk groove, 112 BPM ----------

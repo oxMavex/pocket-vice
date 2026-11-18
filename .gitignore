@@ -17,3 +17,5 @@ builds/*/out/post-*.md
 builds/*/out/sound.wav
 builds/*/out/showcase-silent.mp4
 cuts/post-*.md
+builds/06-model-heist/out/*.mp4
+builds/06-model-heist/out/render-log.txt

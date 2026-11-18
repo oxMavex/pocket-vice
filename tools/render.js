@@ -12,7 +12,7 @@ const argOf = (k, d) => { const a = process.argv.find(a => a.startsWith('--' + k
 const posterT = +((process.argv.find(a => a.startsWith('--poster=')) || '--poster=2.4').split('=')[1]);
 if (!slug) { console.error('usage: node tools/render.js <NN-slug> [what]'); process.exit(1); }
 const OUT = path.join(ROOT, 'builds', slug, 'out');
-const FPS = 30, PROC_S = 12;
+const FPS = 30, PROC_S = 12, VW = +argOf('w', 1080), VH = +argOf('h', 1080), QS = argOf('q', '');
 let SHOW_S = 30;
 const save = (file, dataUrl) => fs.writeFileSync(file, Buffer.from(dataUrl.split(',')[1], 'base64'));
 
@@ -29,7 +29,7 @@ function encode(dir, file) {
   const srv = await serve();
   const base = `http://127.0.0.1:${srv.address().port}`;
   const browser = await chromium.launch({ args: ['--use-angle=d3d11', '--enable-gpu', '--ignore-gpu-blocklist'] });
-  const page = await (await browser.newContext({ viewport: { width: 1080, height: 1080 }, deviceScaleFactor: 1 })).newPage();
+  const page = await (await browser.newContext({ viewport: { width: VW, height: VH }, deviceScaleFactor: 1 })).newPage();
   const errors = [];
   page.on('pageerror', e => errors.push(String(e)));
   const log = { slug, when: new Date().toISOString(), fps: FPS, errors };
@@ -37,7 +37,7 @@ function encode(dir, file) {
   const prev = fs.existsSync(prevPath) ? JSON.parse(fs.readFileSync(prevPath, 'utf8')) : {};
 
   if (['showcase', 'poster', 'preview', 'all'].includes(what)) {
-    await page.goto(`${base}/builds/${slug}/index.html`);
+    await page.goto(`${base}/builds/${slug}/index.html${QS ? '?' + QS : ''}`);
     await page.waitForFunction(() => window.__ready && window.__fileBytes, null, { timeout: 20000 });
     if (what === 'preview') {
       const dir = path.join(OUT, 'preview'); fs.mkdirSync(dir, { recursive: true });
