@@ -278,3 +278,9 @@
 - Не проверено: FPS живой страницы на телефоне (check.js не гонял ради экономии).
 
 - P3 «Curbside» опубликован владельцем 18.11: https://x.com/0xMavex/status/2122998296943771829
+
+### cut «launch night» (18.11)
+- Промпт владельца: 4 скрина конкурентов (Fable 5.2 Miami, пиксельный вертолёт $19.79, «утечка» GTA 6 2M, сервер модов) + «GTA 6 выходит через 1 час 30 минут в Новой Зеландии… сделай крутой пост».
+- Механика конкурентов, которую берём: модель + цифра + контраст со «студией». Не берём: утечки, выдуманные $ и сроки.
+- Факты: NZ unlock 11:00 UTC 18.11 (https://mp1st.com/news/gta-6-unlock-times-revealed), 212 GB (https://gamesradar.com/games/grand-theft-auto/rockstar-confirms-gta-6-is-212gb-pre-loading-opens-earlier-than-previously-announced-for-digital-orders).
+- Монтаж cuts/launch-night.mp4 из showcase билдов 04 / 02 / 03 / 04, плашка «GTA 6: 212 GB · these 3 cities: 131 KB», −14 LUFS.

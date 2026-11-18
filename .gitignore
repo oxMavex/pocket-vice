@@ -16,3 +16,4 @@ builds/*/out/post-*.md
 # sound masters (rebuilt by tools/sound.js)
 builds/*/out/sound.wav
 builds/*/out/showcase-silent.mp4
+cuts/post-*.md
