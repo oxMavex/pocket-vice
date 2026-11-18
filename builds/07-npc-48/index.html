@@ -1,0 +1,432 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NPC #48 · built with Claude Opus 5.5</title>
+<style>html,body{margin:0;height:100%;background:#000;overflow:hidden}
+canvas{position:fixed;inset:0;width:100%;height:100%;display:block}</style></head><body>
+<canvas id="c"></canvas><canvas id="h"></canvas>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script id="S">
+// NPC #48 · a scripted trailer · every building in this city is one word of this script
+const R = THREE, $ = id => document.getElementById(id), DUR = 36.5, V = 0.45;
+const cv = $('c'), hc = $('h'), g = hc.getContext('2d');
+const ren = new R.WebGLRenderer({ canvas: cv, antialias: true, preserveDrawingBuffer: true,
+  logarithmicDepthBuffer: true });
+ren.toneMapping = R.ACESFilmicToneMapping; ren.toneMappingExposure = 0.72;
+ren.outputEncoding = R.sRGBEncoding; ren.shadowMap.enabled = true;
+ren.shadowMap.type = R.PCFSoftShadowMap;
+const scene = new R.Scene(), cam = new R.PerspectiveCamera(36, 1, 0.04, 6000);
+const HZ = new R.Color(1.3, 0.55, 0.25), SUN = new R.Vector3(-0.9, 0.38, -0.2).normalize();
+scene.fog = new R.Fog(HZ.clone().multiplyScalar(0.8), 30, 200);
+const sst = (a, b, x) => { const u = Math.min(1, Math.max(0, (x - a) / (b - a))); return u * u * (3 - 2 * u); };
+const lin = (a, b, x) => Math.min(1, Math.max(0, (x - a) / (b - a)));
+const mix = (a, b, u) => a + (b - a) * u, v3 = (x, y, z) => new R.Vector3(x, y, z);
+const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
+const hash = n => { const x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
+const trap = (u, r) => { const vm = 1 / (1 - r);
+  return u < r ? .5 * vm * u * u / r : u > 1 - r ? 1 - .5 * vm * (1 - u) * (1 - u) / r : vm * (u - r / 2); };
+
+// ---- the map: read this very script, one building per word ----
+const SRC = $('S').textContent.replace(/^\s*\n/, '').replace(/\s+$/, '');
+const LN = SRC.split('\n').map(s => s.replace(/\t/g, '  ').replace(/\s+$/, ''));
+const N = LN.length, NC = 3, PER = Math.ceil(N / NC), P = 4, D = 2, CP = 122;
+const X0 = k => k * CP - (NC * CP - 18) / 2, ZR = r => r * P - PER * P / 2;
+const KW = /^(const|let|var|function|return|if|else|for|new|while|of|in|=>)$/;
+const CSS = ['#ece6d8', '#ff8f6b', '#a6d987', '#f2c46d', '#8a93a1', '#a3b1c4'];
+const SYN = CSS.map(c => new R.Color(c));
+const WALL = ['#ead7b7', '#dba67c', '#c98169', '#f0e7d8', '#a9c3b6', '#d8ba8e', '#bca38b', '#e3c4a8'];
+const HB = [[2.6, 4.5], [6, 6], [1.7, 1.6], [1.3, 1], [1.1, 1.1], [0.7, 0.6]];
+const toks = [];
+LN.forEach((s, i) => {
+  const k = i / PER | 0, r = i % PER, re = /\S+/g; let m, com = false;
+  while ((m = re.exec(s))) {
+    const t = m[0]; if (t.startsWith('//')) com = true;
+    const c = com ? 4 : /['"`]/.test(t) ? 2 : /^[\d.\-]+[,;)]*$/.test(t) ? 3
+      : KW.test(t.replace(/[(;,]+$/, '')) ? 1 : /^[\w$]/.test(t) ? 0 : 5;
+    const j = toks.length, hh = hash(j * 1.7 + i);
+    toks.push({ i, k, r, s: m.index, e: m.index + t.length, t, c, z: ZR(r),
+      x: X0(k) + m.index + t.length / 2, w: t.length - 0.25, h: HB[c][0] + HB[c][1] * hh * hh });
+  }
+});
+const IT = N - 1, KT = IT / PER | 0, RT = IT % PER, XT = X0(KT), ZT = ZR(RT);
+const ZS = ZT - P / 2, AX = XT + LN[IT].indexOf('leave') - 0.5, XH0 = AX + 3, ZH = ZS + 0.72;
+const ZN = ZT + P, XE = XT + 35.6, XS = XH0 + V * 0.85 - 0.9 * 0.0625;
+const CX = (X0(0) + X0(NC - 1) + 104) / 2;
+
+// ---- buildings: windows from world position, code colours on the roofs ----
+const U = { uCode: { value: 0 }, uNight: { value: 0.25 } };
+const bMat = new R.MeshStandardMaterial({ roughness: 0.82 });
+bMat.onBeforeCompile = sh => {
+  Object.assign(sh.uniforms, U);
+  sh.vertexShader = 'attribute vec3 aSyn;varying vec3 vSyn,vW,vN;\n' + sh.vertexShader.replace(
+    '#include <begin_vertex>', `#include <begin_vertex>
+    vSyn = aSyn; mat4 mw = modelMatrix;
+    #ifdef USE_INSTANCING
+    mw = mw * instanceMatrix;
+    #endif
+    vW = (mw * vec4(transformed, 1.)).xyz; vN = normalize(mat3(mw) * objectNormal);`);
+  sh.fragmentShader = 'uniform float uCode,uNight;varying vec3 vSyn,vW,vN;\n' +
+    'float hh(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}\n' +
+    sh.fragmentShader.replace('#include <color_fragment>', `#include <color_fragment>
+    float win = 0., lit = 0., roof = step(.5, vN.y);
+    if (abs(vN.y) < .5) {
+      vec2 q = vec2((abs(vN.x) > .5 ? vW.z : vW.x) / .5, vW.y / .62), f = fract(q);
+      win = step(.22, f.x) * step(f.x, .78) * step(.28, f.y) * step(f.y, .86) * step(.6, vW.y) * (1. - smoothstep(22., 60., distance(vW, cameraPosition)));
+      lit = win * step(.7, hh(floor(q) + floor(vW.xz * .2)));
+      vec3 gl = mix(vec3(.55, .38, .3), vec3(.09, .12, .18), f.y);
+      diffuseColor.rgb = mix(diffuseColor.rgb, gl, win * .9);
+      diffuseColor.rgb *= mix(.5, 1., smoothstep(0., .9, vW.y));
+    } else diffuseColor.rgb *= .82;
+    diffuseColor.rgb = mix(diffuseColor.rgb, vec3(.015, .016, .02), uCode);`)
+    .replace('#include <roughnessmap_fragment>', `#include <roughnessmap_fragment>
+    roughnessFactor = mix(roughnessFactor, .3, win);`)
+    .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
+    totalEmissiveRadiance += vec3(1., .62, .3) * lit * uNight * (1. - uCode)
+      + vSyn * uCode * roof * .07;`);
+};
+const M4 = new R.Matrix4(), Q = new R.Quaternion(), V0 = new R.Vector3(), S3 = new R.Vector3();
+function blocks(list) {
+  const geo = new R.BoxGeometry(1, 1, 1).translate(0, 0.5, 0), syn = new Float32Array(list.length * 3);
+  const im = new R.InstancedMesh(geo, bMat, list.length);
+  list.forEach((o, j) => { SYN[o.c].toArray(syn, j * 3);
+    im.setColorAt(j, new R.Color(WALL[(hash(j + o.i * 7) * WALL.length) | 0])); });
+  geo.setAttribute('aSyn', new R.InstancedBufferAttribute(syn, 3));
+  im.castShadow = im.receiveShadow = true; im.frustumCulled = false; im.list = list;
+  scene.add(im); return im;
+}
+let lastF = -1;
+function lift(f) { if (f === lastF) return; lastF = f;
+  city.list.forEach((o, j) => { M4.compose(V0.set(o.x, 0, o.z), Q.identity(), S3.set(o.w, o.h * f, D));
+    city.setMatrixAt(j, M4); }); city.instanceMatrix.needsUpdate = true; }
+const city = blocks(toks);
+
+// ---- ground: one slab per column, a sidewalk per line, the unrendered void around ----
+const gMat = new R.MeshStandardMaterial({ color: '#57504a', roughness: 0.92 });
+const wMat = new R.MeshStandardMaterial({ color: '#c2b29f', roughness: 0.95 });
+for (let k = 0; k < NC; k++) { const n = Math.min(PER, N - k * PER); if (n <= 0) break;
+  const m = new R.Mesh(new R.BoxGeometry(CP - 14, 0.3, n * P), gMat);
+  m.position.set(X0(k) + (CP - 14) / 2 - 2, -0.15, ZR(0) - P / 2 + n * P / 2);
+  m.receiveShadow = true; scene.add(m); }
+const walks = [];
+LN.forEach((s, i) => { const a = s.search(/\S/); if (a < 0) return;
+  walks.push([X0(i / PER | 0) + (a + s.length) / 2, ZR(i % PER), s.length - a + 0.9]); });
+const walk = new R.InstancedMesh(new R.BoxGeometry(1, 0.05, D + 0.9), wMat, walks.length);
+walks.forEach(([x, z, w], j) => walk.setMatrixAt(j, M4.makeTranslation(x, 0.025, z).scale(S3.set(w, 1, 1))));
+walk.receiveShadow = true; walk.frustumCulled = false; scene.add(walk);
+const gc = document.createElement('canvas'); gc.width = gc.height = 128;
+const gx = gc.getContext('2d'); gx.fillStyle = '#0d1015'; gx.fillRect(0, 0, 128, 128);
+gx.fillStyle = '#263042'; gx.fillRect(0, 0, 128, 3); gx.fillRect(0, 0, 3, 128);
+const gt = new R.CanvasTexture(gc); gt.wrapS = gt.wrapT = R.RepeatWrapping; gt.repeat.set(3000, 3000);
+gt.anisotropy = 8; gt.encoding = R.sRGBEncoding;
+const voidM = new R.Mesh(new R.PlaneGeometry(3000, 3000), new R.MeshBasicMaterial({ map: gt }));
+voidM.rotation.x = -Math.PI / 2; voidM.position.y = -0.3; scene.add(voidM);
+
+// ---- sky and sun ----
+const sky = new R.Mesh(new R.SphereGeometry(2500, 32, 16), new R.ShaderMaterial({
+  side: R.BackSide, depthWrite: false, fog: false, uniforms: { uS: { value: SUN }, uH: { value: HZ } },
+  vertexShader: 'varying vec3 vD;void main(){vD=normalize(position);' +
+    'gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
+  fragmentShader: `uniform vec3 uS, uH; varying vec3 vD; void main() {
+    float y = vD.y, s = max(dot(vD, uS), 0.);
+    vec3 c = mix(uH, vec3(.1, .2, .48), smoothstep(.0, .5, y));
+    c += vec3(1., .5, .2) * pow(s, 6.) * .9 + vec3(1., .8, .5) * pow(s, 900.) * 30.;
+    c = mix(c, uH * .8, smoothstep(0., -.08, y));
+    gl_FragColor = vec4(c, 1.);
+    #include <tonemapping_fragment>
+    #include <encodings_fragment>
+  }` }));
+sky.renderOrder = -1; scene.add(sky);
+scene.add(new R.HemisphereLight(0xffcfb0, 0x6a4a3a, 0.5));
+const sun = new R.DirectionalLight(0xffb27a, 3.6); sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048); sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.02;
+scene.add(sun, sun.target);
+
+// ---- people: the same body for everyone, #48 gets a hoodie ----
+const LEG = new R.BoxGeometry(0.042, 0.16, 0.046).translate(0, -0.08, 0);
+const ARM = new R.BoxGeometry(0.03, 0.14, 0.032).translate(0, -0.07, 0);
+const BODY = new R.CylinderGeometry(0.05, 0.066, 0.18, 12).translate(0, 0.25, 0);
+const HEAD = new R.SphereGeometry(0.056, 16, 12);
+const mat = c => new R.MeshStandardMaterial({ color: c, roughness: 0.8 });
+const hero = new R.Group();
+const part = (geo, m, x, y, z, p) => { const o = new R.Mesh(geo, m); o.position.set(x, y, z);
+  o.castShadow = true; p.add(o); return o; };
+const piv = (x, y) => { const p = new R.Group(); p.position.set(x, y, 0); hero.add(p); return p; };
+const hoodie = mat('#ff6a13'), jeans = mat('#283452'), skinM = mat('#dfa47f');
+const hipL = piv(-0.03, 0.16), hipR = piv(0.03, 0.16), shL = piv(-0.076, 0.32), shR = piv(0.076, 0.32);
+part(LEG, jeans, 0, 0, 0, hipL); part(LEG, jeans, 0, 0, 0, hipR); part(BODY, hoodie, 0, 0, 0, hero);
+part(ARM, hoodie, 0, 0, 0, shL); part(ARM, hoodie, 0, 0, 0, shR);
+const neck = piv(0, 0.34); neck.rotation.order = 'YXZ'; part(HEAD, skinM, 0, 0.055, 0, neck);
+const hood = part(new R.SphereGeometry(0.063, 16, 12, Math.PI / 2 + 0.9, Math.PI * 2 - 1.8, 0, 2),
+  hoodie, 0, 0.058, -0.008, neck); hood.material = hoodie.clone(); hood.material.side = R.DoubleSide;
+const eye = new R.SphereGeometry(0.0095, 8, 6), ink = mat('#111');
+part(eye, ink, -0.021, 0.066, 0.05, neck); part(eye, ink, 0.021, 0.066, 0.05, neck);
+hero.rotation.order = 'YXZ'; scene.add(hero);
+const LANES = [];
+const lane = (z, dir, a, b, sp, ph = 0) => { const n = Math.floor((b - a) / sp);
+  const l = { z, dir, a, L: n * sp, sp, ph, n }; LANES.push(l); return l; };
+const HL = lane(ZH, 1, AX - 24, AX + 30, 0.8);   // the route #48 walks every day
+HL.ih = Math.round((XH0 - HL.a) / 0.8); HL.ph = XH0 - HL.a - HL.ih * 0.8;
+lane(ZS - 0.72, -1, AX - 24, AX + 30, 0.9);
+for (let r = Math.max(1, RT - 12); r < RT; r++) for (const s of [-1, 1])
+  lane(ZR(r) - P / 2 + s * 0.72, s, XT - 1, XT + 105, 3.1, r * 0.37);
+if (KT > 0) for (let r = PER - 10; r < PER; r++) for (const s of [-1, 1])
+  lane(ZR(r) - P / 2 + s * 0.72, s, X0(KT - 1) - 1, X0(KT - 1) + 105, 3.1, r * 0.53);
+const NP = LANES.reduce((a, l) => a + l.n, 0);
+const inst = (geo, c, n) => { const m = new R.InstancedMesh(geo, mat(c), n);
+  m.castShadow = true; m.frustumCulled = false; scene.add(m); return m; };
+const cBody = inst(BODY, '#868b92', NP), cHead = inst(HEAD, '#ffffff', NP);
+const cLeg = inst(LEG, '#3a3f47', NP * 2), cArm = inst(ARM, '#868b92', NP * 2);
+const SKIN = ['#e0ae8f', '#c98e6b', '#8d5a3e', '#f0c6a8'].map(c => new R.Color(c));
+for (let j = 0; j < NP; j++) cHead.setColorAt(j, SKIN[(hash(j * 3.1) * 4) | 0]);
+const B = new R.Matrix4(), T4 = new R.Matrix4(), RX = new R.Matrix4();
+const limb = (im, j, x, y, a) => im.setMatrixAt(j, M4.copy(B).multiply(T4.makeTranslation(x, y, 0))
+  .multiply(RX.makeRotationX(a)));
+function pose(j, x, z, yaw, sw, hide) {
+  if (hide) B.makeScale(0, 0, 0); else B.makeRotationY(yaw).setPosition(x, Math.abs(sw) * 0.02, z);
+  cBody.setMatrixAt(j, B); cHead.setMatrixAt(j, M4.copy(B).multiply(T4.makeTranslation(0, 0.395, 0)));
+  limb(cLeg, 2 * j, -0.03, 0.16, sw); limb(cLeg, 2 * j + 1, 0.03, 0.16, -sw);
+  limb(cArm, 2 * j, -0.076, 0.32, -sw * 0.8); limb(cArm, 2 * j + 1, 0.076, 0.32, sw * 0.8);
+}
+function crowd(t, hx) {
+  const sw = Math.sin(V * t / 0.5 * Math.PI * 2) * 0.55; let j = 0;
+  for (const l of LANES) for (let i = 0; i < l.n; i++, j++) {
+    const x = l.a + (((i * l.sp + l.ph + l.dir * V * t) % l.L) + l.L) % l.L;
+    const z = l === HL && t > 0.6 ? l.z - 0.4 * sst(0.8, 0, Math.abs(x - hx)) : l.z;
+    pose(j, x, z, l.dir * Math.PI / 2, sw, l === HL && i === l.ih);
+  }
+  for (const m of [cBody, cHead, cLeg, cArm]) m.instanceMatrix.needsUpdate = true;
+}
+
+// ---- #48's day, in seconds ----
+function path(t) {
+  let x = AX, z = ZH;
+  if (t < 0.6) x = XH0 + V * t;
+  else if (t < 0.85) { const u = t - 0.6; x = XH0 + V * 0.6 + V * u - 0.9 * u * u; }
+  else if (t < 4) x = XS;
+  else if (t < 10) x = mix(XS, AX, trap(lin(4, 10, t), 0.12));
+  else if (t < 10.5) x = AX;
+  else if (t < 23.8) z = mix(ZH, ZT + 1.85, trap(lin(10.5, 14.6, t), 0.15));
+  else if (t < 25.25) z = mix(ZT + 1.85, ZN + 1.5, trap(lin(23.8, 25, t), 0.25));
+  else { z = ZN + 1.5; x = mix(AX, XE, trap(lin(25.25, 32.2, t), 0.08)); }
+  return [x, z];
+}
+const HT = [];
+{ let ph = 0, [px, pz] = path(0);
+  for (let i = 0; i <= DUR * 120; i++) {
+    const [x, z] = path(i / 120), d = Math.hypot(x - px, z - pz), s = d * 120, run = sst(0.9, 1.8, s);
+    ph += d / mix(0.5, 1, run) * Math.PI * 2;
+    HT.push({ x, z, ph, run, amp: Math.min(1, s / 0.35) * mix(0.55, 0.95, run) }); px = x; pz = z;
+  } }
+const QP = Math.PI / 2;
+function yawAt(t) {
+  if (t < 3.4) return QP;
+  if (t < 10) return mix(QP, -QP, sst(3.4, 4, t));
+  if (t < 25) return mix(-QP, 0, sst(10, 10.5, t));
+  if (t < 32.3) return mix(0, QP, sst(25, 25.25, t));
+  return mix(QP, 0, sst(32.3, 32.8, t));
+}
+const heroAt = t => { const h = HT[Math.min(HT.length - 1, Math.round(t * 120))];
+  return Object.assign({ yaw: yawAt(t), sw: Math.sin(h.ph) * h.amp }, h); };
+const lookW = t => sst(1, 1.1, t) * (1 - sst(3.3, 3.6, t)) + sst(15, 15.6, t) * (1 - sst(23.6, 24, t))
+  + sst(32.6, 33, t);
+function poseHero(H, t) {
+  hero.position.set(H.x, Math.abs(H.sw) * 0.016, H.z); hero.rotation.set(0.2 * H.run, H.yaw, 0);
+  hipL.rotation.x = H.sw; hipR.rotation.x = -H.sw;
+  shL.rotation.set(-H.sw * 0.9, 0, 0); shR.rotation.set(H.sw * 0.9, 0, 0);
+  const wv = sst(33.2, 33.6, t); if (wv > 0) shR.rotation.set(0, 0, wv * (2.7 + Math.sin(t * 9) * 0.3));
+  hero.updateMatrixWorld(true); const lw = lookW(t), np = neck.getWorldPosition(V0);
+  const dx = cam.position.x - np.x, dy = cam.position.y - np.y - 0.05, dz = cam.position.z - np.z;
+  let a = Math.atan2(dx, dz) - H.yaw; a = Math.atan2(Math.sin(a), Math.cos(a));
+  neck.rotation.set(-clamp(Math.atan2(dy, Math.hypot(dx, dz)), -0.7, 1) * lw, clamp(a, -1.3, 1.3) * lw, 0);
+}
+
+// ---- the same car, every time ----
+const car = new R.Group(), cpart = (w, h, d, c, x, y, o = {}) => { const m = new R.Mesh(
+  new R.BoxGeometry(w, h, d), new R.MeshStandardMaterial(Object.assign({ color: c, roughness: .35 }, o)));
+  m.position.set(x, y, 0); m.castShadow = true; car.add(m); return m; };
+cpart(0.95, 0.16, 0.42, '#ff3b2b', 0, 0.15, { metalness: 0.1 }); cpart(0.5, 0.13, 0.38, '#1d2633', -0.05, 0.28);
+cpart(0.02, 0.04, 0.34, '#fff4d6', 0.48, 0.16, { emissive: '#ffe2a8', emissiveIntensity: 2 });
+const wheel = new R.CylinderGeometry(0.075, 0.075, 0.06, 16).rotateX(QP);
+for (const [x, z] of [[-0.3, -0.2], [-0.3, 0.2], [0.3, -0.2], [0.3, 0.2]]) {
+  const w = new R.Mesh(wheel, mat('#15171a')); w.position.set(x, 0.075, z); car.add(w); }
+scene.add(car);
+function carAt(t) { car.visible = false;
+  for (const tc of [5.3, 8.7]) if (Math.abs(t - tc) < 2.2) {
+    car.visible = true; car.position.set(path(tc)[0] + 4.2 * (t - tc), 0, ZS - 0.1); } }
+
+// ---- the line he writes ----
+const NT = [['leave(him);', 16, 0, 3.4], ['//', 28, 4, 1.2], ['done', 31, 4, 1.7]].map(([t, s, c, h], j) =>
+  ({ t, s, e: s + t.length, c, h, i: N + j, k: KT, z: ZN, x: XT + s + t.length / 2, w: t.length - .25 }));
+const nl = blocks(NT);
+const slab = new R.Mesh(new R.BoxGeometry(1, 0.3, 4), gMat); slab.receiveShadow = true; scene.add(slab);
+let typed = 0;
+function newLine(t, H) {
+  typed = t < 25.25 ? 0 : clamp(Math.ceil(H.x - XT - 16), 0, 19);
+  const w = Math.max(1.6, typed + 1.4), rise = sst(32.4, 34.2, t);
+  slab.visible = t > 23.8; slab.scale.x = w; slab.position.set(XT + 15.7 + w / 2, -0.15, ZT + 4);
+  nl.list.forEach((o, j) => { const on = typed >= o.e - 16 ? 1 : 0;
+    M4.compose(V0.set(o.x, 0, o.z), Q.identity(), S3.set(o.w * on, o.h * mix(0.04, 1, rise) * on, D * on));
+    nl.setMatrixAt(j, M4); }); nl.instanceMatrix.needsUpdate = true;
+}
+
+// ---- camera: one shot per beat ----
+function crane(Pa, Qa, Pb, Qb, e) {
+  const h = Pa.y * Math.pow(Pb.y / Pa.y, e), f = (h - Pa.y) / (Pb.y - Pa.y);
+  return [Pa.clone().lerp(Pb, f), Qa.clone().lerp(Qb, f)];
+}
+const d1p = v3(AX - 0.7, 0.22, ZT + 3.7), d1q = v3(AX, 0.3, ZT + 1.85), Pa = d1p.clone().lerp(d1q, 0.15);
+const Pb = v3(CX, 650, 30), Qb = v3(CX, 0, 0), Pc = v3(XT + 12, 15, ZT + 13), Qc = v3(XT + 12, 0, ZT + 0.3);
+const endE = t => { const H = heroAt(t); return [v3(H.x - 3, 6.5, ZN + 8), v3(H.x + 1.2, 0, ZN + 0.4)]; };
+function shot(t, H) {
+  if (t < 4) { const q = v3(H.x, 0.3, ZH), p = v3(XH0 + 2 - 0.1 * t, 0.3, ZS - 0.2);
+    return [p.lerp(q, sst(1, 3.6, t) * 0.35), q, 32]; }
+  if (t < 10) return [v3(H.x + 0.3, 0.7, ZS - 0.55), v3(H.x - 0.25, 0.22, ZH), 40];
+  if (t < 15) return [v3(AX + 0.2, 0.62, H.z - 1.25), v3(AX - 0.05, 0.3, H.z + 2.5), 42];
+  if (t < 17.2) return [d1p.clone().lerp(d1q, 0.15 * lin(15, 17.2, t)), d1q, 34];
+  if (t < 21.4) return crane(Pa, d1q, Pb, Qb, sst(17.2, 20.2, t)).concat(mix(34, 40, sst(17.2, 20.2, t)));
+  if (t < 23.8) return crane(Pb, Qb, Pc, Qc, sst(21.4, 23, t)).concat(40);
+  const [pE, qE] = endE(t), k = sst(23.8, 24.6, t);
+  if (t < 32.2) return [Pc.clone().lerp(pE, k), Qc.clone().lerp(qE, k), 40];
+  const [pe, qe] = endE(32.2);
+  return crane(pe, qe, v3(XT + 30, 38, ZN + 46), v3(XT + 28, 0, ZN - 18), sst(32.2, 36, t)).concat(40);
+}
+
+// ---- HUD: captions, routine, name tags, the code itself ----
+const CAP = [[0, 1, 'this is NPC #48.'], [1.05, 3.9, 'he just noticed the camera.'],
+  [5.1, 7.2, 'same car.'], [8.5, 10.3, 'same car. again.'], [12.4, 15, 'the street just ends.'],
+  [15.3, 17.2, 'there is nothing out there.'], [17.4, 19.2, 'so he looked at the map.'],
+  [19.6, 21.8, 'the city is its own source code.'], [22, 23.8, 'and the last line says:'],
+  [25.4, 28.8, 'so he finished it himself.']];
+const OBJ = [[0, 0.95, 'ROUTINE', 'walk to work. repeat.'], [0.95, 4, 'ROUTINE', 'ERROR'],
+  [4, 14.6, 'OBJECTIVE', 'find the edge of the map'], [14.6, 21.4, 'OBJECTIVE', 'read the map'],
+  [21.4, 32.4, 'OBJECTIVE', 'leave'], [32.4, 33, 'OBJECTIVE', 'complete']];
+let KB = '…';
+fetch(location.href).then(r => r.blob()).then(b => { KB = (b.size / 1024).toFixed(1); }).catch(() => {});
+const PV = new R.Vector3();
+const proj = (x, y, z) => { PV.set(x, y, z).project(cam);
+  return [(PV.x + 1) / 2 * hc.width, (1 - PV.y) / 2 * hc.height, PV.z]; };
+let CWP = 12;
+function drawTok(x, z, y, txt, c, a) {
+  const [x0, y0, z0] = proj(x, y, z); if (z0 > 1 || z0 < -1) return;
+  const [x1, y1] = proj(x + 1, y, z), [x2, y2] = proj(x, y, z + 1);
+  const ax = x1 - x0, ay = y1 - y0, n = txt.length, cs = Math.hypot(ax, ay), xe = x0 + ax * n, ye = y0 + ay * n;
+  if (cs < 0.25 || Math.max(x0, xe) < -60 || Math.min(x0, xe) > hc.width + 60) return;
+  if (Math.max(y0, ye) < -60 || Math.min(y0, ye) > hc.height + 60) return;
+  g.setTransform(ax / CWP, ay / CWP, (x2 - x0) / CWP, (y2 - y0) / CWP, x0, y0);
+  g.globalAlpha = a; g.fillStyle = CSS[c];
+  if (cs > 30 && n > 1) { for (let i = 0; i < n; i++) drawTok(x + i, z, y, txt[i], c, a); return; }
+  if (cs < 3) g.fillRect(0, -7, n * CWP, 14); else g.fillText(txt, 0, 0);
+}
+function pill(x, y, z, txt, bg, u) {
+  const [px, py, pz] = proj(x, y, z); if (pz > 1) return;
+  g.font = `700 ${22 * u}px "Segoe UI", system-ui, sans-serif`; const w = g.measureText(txt).width + 22 * u;
+  g.fillStyle = bg; g.beginPath(); g.roundRect ? g.roundRect(px - w / 2, py - 34 * u, w, 30 * u, 8 * u)
+    : g.rect(px - w / 2, py - 34 * u, w, 30 * u); g.fill();
+  g.fillStyle = '#fff'; g.textAlign = 'center'; g.fillText(txt, px, py - 19 * u); g.textAlign = 'left';
+}
+function hud(t, H) {
+  const W = hc.width, Hh = hc.height, u = Hh / 1080, bar = 64 * u;
+  g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = 1; g.clearRect(0, 0, W, Hh);
+  g.textBaseline = 'middle'; g.font = '600 20px Consolas, "Courier New", monospace';
+  CWP = g.measureText('M').width;
+  const ca = sst(19.2, 20.4, t) * (1 - sst(32.2, 33, t));
+  if (ca > 0) for (const o of toks) drawTok(X0(o.k) + o.s, o.z, o.h * mix(1, 0.04, lastF) + 0.01, o.t, o.c, ca);
+  const na = t < 25.25 ? 0 : 1 - sst(32.2, 33, t);
+  if (na > 0) { for (const o of NT) { const n = clamp(typed - (o.s - 16), 0, o.t.length);
+      if (n) drawTok(XT + o.s, ZN, 0.02, o.t.slice(0, n), o.c, na); }
+    if ((t * 2.5) % 1 < 0.6) drawTok(XT + 16 + typed, ZN, 0.02, '█', 1, na); }
+  g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = 1;
+  const hl = sst(22.2, 22.5, t) * (1 - sst(25.5, 26, t));
+  if (hl > 0) { g.globalAlpha = hl; g.beginPath();
+    [[-0.4, -1.15], [22.4, -1.15], [22.4, 1.15], [-0.4, 1.15]].forEach(([a, b], j) => {
+      const p = proj(XT + a, 0.05, ZT + b); j ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1]); });
+    g.closePath(); g.fillStyle = 'rgba(255,209,102,.14)'; g.fill(); g.lineWidth = 4 * u;
+    g.strokeStyle = '#ffd166'; g.stroke(); g.globalAlpha = 1; }
+  if (t < 3.9) for (let i = 0; i < HL.n; i++) { if (i === HL.ih) continue;
+    const x = HL.a + (((i * HL.sp + HL.ph + V * t) % HL.L) + HL.L) % HL.L;
+    if (Math.abs(x - H.x) < 2.6) pill(x, 0.55, HL.z, '#' + (48 + i - HL.ih), 'rgba(40,44,52,.75)', u); }
+  if (t < 32.4 || t > 32.9) pill(H.x, 0.56, H.z, t > 0.95 && t < 4 ? '#48 · ?' : '#48', '#ff6a13', u);
+  const vg = g.createRadialGradient(W / 2, Hh / 2, Hh * 0.35, W / 2, Hh / 2, Hh * 0.95);
+  vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.45)');
+  g.fillStyle = vg; g.fillRect(0, 0, W, Hh);
+  g.fillStyle = '#000'; g.fillRect(0, 0, W, bar); g.fillRect(0, Hh - bar, W, bar);
+  g.font = `600 ${20 * u}px Consolas, monospace`; g.fillStyle = '#9aa3ad';
+  g.fillText('scripted scene', 40 * u, Hh - bar / 2); g.textAlign = 'right';
+  g.fillText(`index.html · ${KB} KB · built with Claude Opus 5.5`, W - 40 * u, Hh - bar / 2);
+  g.textAlign = 'left';
+  for (const [a, b, k, txt] of OBJ) if (t >= a && t < b) {
+    const x = 40 * u, y = bar + 30 * u; g.font = `800 ${17 * u}px "Segoe UI", sans-serif`;
+    const w = Math.max(g.measureText(k).width, (g.font = `600 ${26 * u}px "Segoe UI", sans-serif`,
+      g.measureText(txt).width)) + 36 * u;
+    g.fillStyle = 'rgba(12,14,18,.62)'; g.fillRect(x, y, w, 76 * u);
+    g.fillStyle = '#ff6a13'; g.fillRect(x, y, 5 * u, 76 * u);
+    g.font = `800 ${17 * u}px "Segoe UI", sans-serif`; g.fillText(k, x + 20 * u, y + 22 * u);
+    g.font = `600 ${26 * u}px "Segoe UI", sans-serif`; g.fillStyle = txt === 'ERROR' ? '#ff5a5a' : '#fff';
+    g.fillText(txt, x + 20 * u, y + 52 * u);
+  }
+  for (const [a, b, txt] of CAP) if (t >= a && t < b) {
+    const al = sst(a, a + 0.15, t) * (1 - sst(b - 0.2, b, t)), s = 1 + 0.06 * (1 - sst(a, a + 0.2, t));
+    g.save(); g.globalAlpha = al; g.translate(W / 2, Hh - bar - 92 * u); g.scale(s, s);
+    g.font = `900 ${54 * u}px "Segoe UI", system-ui, sans-serif`; g.textAlign = 'center';
+    g.shadowColor = 'rgba(0,0,0,.8)'; g.shadowBlur = 22 * u; g.fillStyle = '#fff';
+    g.fillText(txt, 0, 0); g.restore();
+  }
+  const ti = sst(33, 33.6, t);
+  if (ti > 0) { g.save(); g.globalAlpha = ti; g.textAlign = 'center';
+    const y = Hh * 0.42, gr = g.createLinearGradient(0, y - 160 * u, 0, y + 160 * u);
+    gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(0.5, 'rgba(0,0,0,.55)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = gr; g.fillRect(0, y - 160 * u, W, 320 * u);
+    g.font = `900 ${150 * u}px "Segoe UI Black", "Segoe UI", sans-serif`;
+    const w1 = g.measureText('NPC ').width, w2 = g.measureText('#48').width;
+    g.textAlign = 'left'; g.fillStyle = '#fff'; g.fillText('NPC ', W / 2 - (w1 + w2) / 2, y);
+    g.fillStyle = '#ff6a13'; g.fillText('#48', W / 2 - (w1 + w2) / 2 + w1, y); g.textAlign = 'center';
+    g.globalAlpha = sst(33.5, 34.1, t); g.fillStyle = '#fff';
+    g.font = `600 ${34 * u}px "Segoe UI", sans-serif`;
+    g.fillText('an open-world game about the guy in the background', W / 2, y + 100 * u);
+    g.globalAlpha = sst(34.2, 34.8, t); g.fillStyle = '#c9d1da'; g.font = `600 ${24 * u}px Consolas, monospace`;
+    g.fillText(`1 HTML file · ${KB} KB · no engine · no models · built with Claude Opus 5.5`, W / 2, y + 150 * u);
+    g.restore(); }
+  const fl = Math.max(1 - lin(1, 1.18, t), 1 - lin(18.4, 18.65, t)) * (t >= 1 && t < 18.7 ? 1 : 0);
+  if (fl > 0 && (t < 1.2 || t > 18.4)) { g.globalAlpha = fl * 0.35; g.fillStyle = '#fff';
+    g.fillRect(0, 0, W, Hh); g.globalAlpha = 1; }
+}
+
+// ---- events for the sound track ----
+const EV = [[0.6, 'stop'], [1, 'look'], [5.3, 'car'], [8.7, 'car'], [14.6, 'edge'], [17.2, 'crane'],
+  [18.4, 'reveal'], [22.2, 'todo'], [32.4, 'rise'], [33, 'title']];
+for (let t = 0.5556; t < 17; t += 0.5556) EV.push([t, 'crowd']);
+{ let last = 0, ty = 0;
+  for (let i = 1; i < HT.length; i++) { const t = i / 120, h = HT[i], k = Math.floor(h.ph / Math.PI);
+    if (k > last && t > 0.9) EV.push([t, h.run > 0.5 ? 'run' : 'step']); last = k;
+    const n = t < 25.25 ? 0 : clamp(Math.ceil(h.x - XT - 16), 0, 19); if (n > ty) EV.push([t, 'type']); ty = n; } }
+
+// ---- frame ----
+const glc = [new R.Color('#57504a'), new R.Color('#08090b'), new R.Color('#c2b29f')];
+let T = 0, rec = false;
+function render(t) {
+  T = t; const H = heroAt(t), [p, q, fov] = shot(t, H);
+  cam.position.copy(p); cam.lookAt(q); cam.fov = fov; cam.updateProjectionMatrix(); cam.updateMatrixWorld();
+  poseHero(H, t); crowd(t, H.x); carAt(t); newLine(t, H);
+  const cd = sst(18.4, 19.8, t) * (1 - sst(32.4, 34.2, t));
+  lift(Math.round(mix(1, 0.04, sst(18.4, 20, t) * (1 - sst(32.4, 34.2, t))) * 500) / 500);
+  U.uCode.value = cd; sun.intensity = mix(4.2, 1, cd); U.uNight.value = 0.25 + 0.35 * t / DUR;
+  gMat.color.copy(glc[0]).lerp(glc[1], cd); wMat.color.copy(glc[2]).lerp(glc[1], cd);
+  scene.fog.near = 25 + p.y * 2; scene.fog.far = 170 + p.y * 5; sky.position.copy(p);
+  const S = clamp(p.distanceTo(q) * 1.2, 22, 500), sc = sun.shadow.camera;
+  sun.position.copy(q).addScaledVector(SUN, 400); sun.target.position.copy(q);
+  sc.left = sc.bottom = -S; sc.right = sc.top = S; sc.near = 1; sc.far = 900; sc.updateProjectionMatrix();
+  ren.render(scene, cam); hud(t, H);
+}
+function size() {
+  const w = innerWidth, h = innerHeight, d = Math.min(devicePixelRatio, 2);
+  ren.setPixelRatio(d); ren.setSize(w, h, false); hc.width = w * d; hc.height = h * d;
+  cam.aspect = w / h; cam.updateProjectionMatrix(); if (rec) render(T);
+}
+const t0 = performance.now();
+function loop() { if (rec) return; render(((performance.now() - t0) / 1000) % DUR); requestAnimationFrame(loop); }
+window.__seek = t => { rec = true; render(t); };
+window.__duration = DUR;
+window.__tl = () => ({ ev: EV.filter(e => e[0] > T - 1 / 30 + 1e-6 && e[0] <= T + 1e-6).map(e => e[1]) });
+addEventListener('resize', size); size(); render(0); window.__ready = true; requestAnimationFrame(loop);
+// TODO: let him leave
+</script></body></html>
