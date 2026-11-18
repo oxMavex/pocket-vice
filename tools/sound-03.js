@@ -73,6 +73,8 @@ for (const [t, e] of events) if (e === 'shift:me') {
   const f = lp(1800); add(B.tyre, 0, 1.3, 0, .16, u => f(rnd() * 2 - 1) * (1 - sm(.6, 1.3, u)));
 }
 // ---------- events ----------
+const mar = f => t => (Math.sin(TAU * f * t) * Math.exp(-t * 8) + .2 * Math.sin(TAU * 3.93 * f * t) * Math.exp(-t * 30)) * Math.min(1, t * 1500);
+const kick = () => { let ph = 0; return t => { ph += TAU * (50 + 80 * Math.exp(-t * 35)) / SR; return Math.sin(ph) * Math.exp(-t * 9); }; };
 const kaching = () => t => (Math.sin(TAU * 2637 * t) * Math.exp(-t * 5) + .6 * Math.sin(TAU * 3951 * t) * Math.exp(-t * 7) + (t < .03 ? (rnd() * 2 - 1) * .8 : 0)) * Math.min(1, t * 3000);
 const beep = f => t => Math.sign(Math.sin(TAU * f * t)) * .5 * (t < .09 ? 1 : Math.exp(-(t - .09) * 80));
 const thud = () => { let ph = 0; const f = lp(300); return t => { ph += TAU * (70 + 50 * Math.exp(-t * 30)) / SR; return Math.sin(ph) * Math.exp(-t * 14) + f(rnd() * 2 - 1) * Math.exp(-t * 25) * 1.5; }; };
@@ -80,14 +82,14 @@ for (const [t, e] of events) {
   if (e === 'fare:me') { add(B.fx, t, .9, .2, .3, kaching()); add(B.fx, t + .12, .9, -.2, .22, kaching()); }
   if (e === 'fare:bot') { add(B.fx, t, .2, -.3, .1, beep(1046)); add(B.fx, t + .14, .2, -.3, .1, beep(1396)); }
   if (e.startsWith('bump:')) add(B.fx, t, .4, 0, .35, thud());
+  if (e === 'title') for (const [k, n] of [[0, 64], [.12, 71], [.24, 76], [.36, 79]]) add(B.fx, t + k, 1.2, 0, .09, mar(mf(n)));
+  if (e === 'fail') { for (const [k, n] of [[.15, 67], [.4, 63], [.65, 58], [.9, 55]]) add(B.fx, t + k, 1.6, 0, .13, mar(mf(n))); add(B.fx, t + .15, 2.2, 0, .45, kick()); }
 }
 // ---------- toy-funk groove, 112 BPM ----------
 const BPM = 112, BEAT = 60 / BPM, BARS = Math.floor(DUR / (BEAT * 4));
 const KS = (f, len) => { const n = Math.round(len * SR), d = Math.max(2, Math.round(SR / f)), y = new Float32Array(n), s = lp(1500); for (let i = 0; i < d && i < n; i++) y[i] = s(rnd() * 2 - 1); for (let i = d; i < n; i++) y[i] = .497 * (y[i - d] + (i > d ? y[i - d - 1] : 0)); return (t, k) => y[k]; };
-const kick = () => { let ph = 0; return t => { ph += TAU * (50 + 80 * Math.exp(-t * 35)) / SR; return Math.sin(ph) * Math.exp(-t * 9); }; };
 const snare = () => { const f = lp(5000); return t => (f(rnd() * 2 - 1) * Math.exp(-t * 18) + .4 * Math.sin(TAU * 190 * t) * Math.exp(-t * 25)); };
 const hat = () => { let p = 0; return t => { const w = rnd() * 2 - 1, v = w - p; p = w; return v * Math.exp(-t * 90); }; };
-const mar = f => t => (Math.sin(TAU * f * t) * Math.exp(-t * 8) + .2 * Math.sin(TAU * 3.93 * f * t) * Math.exp(-t * 30)) * Math.min(1, t * 1500);
 const ROOT = [40, 40, 43, 45, 40, 40, 38, 43]; // E E G A E E D G
 const BASS = [[0, 0], [.75, 0], [1.5, 12], [2, 10], [2.5, 7], [3.25, 0], [3.5, 3]];
 for (let bar = 0; bar < BARS; bar++) {

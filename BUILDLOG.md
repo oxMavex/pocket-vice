@@ -284,3 +284,9 @@
 - Механика конкурентов, которую берём: модель + цифра + контраст со «студией». Не берём: утечки, выдуманные $ и сроки.
 - Факты: NZ unlock 11:00 UTC 18.11 (https://mp1st.com/news/gta-6-unlock-times-revealed), 212 GB (https://gamesradar.com/games/grand-theft-auto/rockstar-confirms-gta-6-is-212gb-pre-loading-opens-earlier-than-previously-announced-for-digital-orders).
 - Монтаж cuts/launch-night.mp4 из showcase билдов 04 / 02 / 03 / 04, плашка «GTA 6: 212 GB · these 3 cities: 131 KB», −14 LUFS.
+
+### build 05 «The Last Fare» mission (18.11)
+- Промпт владельца: «сделай новую анимашку… интерфейс гта6 миссия какая то и что фабл 5.2 такое сделал но ты понял суть делай».
+- Сделано иначе, чем просили, и почему: интерфейс GTA не копирую (CLAUDE.md: без UI Rockstar), «сделал Fable 5.2» не пишу — это неправда (сделал Claude Opus 5.5), в кадре так и подписано.
+- Свой интерфейс миссии поверх сцены Curbside: заставка «MISSION 1 · The Last Fare», круглая мини-карта с маршрутом и точками, цель, маркер с дистанцией, скорость, «MISSION FAILED». Звук: стинги старта и провала добавлены в tools/sound-03.js (события title / fail).
+- Ролик 16 с, −13.7 LUFS, файл 29.1 KB. Не проверено: FPS живой страницы на телефоне.
