@@ -7,7 +7,8 @@ const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
 
-const OUT = path.join(__dirname, '..', 'builds', '03-last-fare', 'out');
+// usage: node tools/sound-03.js [slug] [duckFrom,duckTo]  (defaults: 03-last-fare, 4.75,6.6)
+const OUT = path.join(__dirname, '..', 'builds', process.argv[2] || '03-last-fare', 'out');
 const TL = JSON.parse(fs.readFileSync(path.join(OUT, 'timeline.json'), 'utf8'));
 const SR = 48000, DUR = TL.duration, TAIL = 2, N = Math.round((DUR + TAIL) * SR), TAU = Math.PI * 2, F = TL.frames, FPS = TL.fps;
 
@@ -102,7 +103,7 @@ add(B.mus, BARS * BEAT * 4, 1.2, 0, .5, kick());
 for (const n of [40, 52, 55, 59]) add(B.mus, BARS * BEAT * 4, 1.4, 0, .05, mar(mf(n + 12)));
 
 // ---------- mix ----------
-const OV = [4.75, 6.6]; // overhead replay: music and engines step back
+const OV = process.argv[3] ? process.argv[3].split(',').map(Number) : process.argv[2] ? [-9, -9] : [4.75, 6.6]; // overhead replay: music and engines step back
 const mix = bus();
 for (let i = 0; i < N; i++) {
   const t = i / SR, ov = sm(OV[0] - .3, OV[0], t) * (1 - sm(OV[1] - .2, OV[1] + .2, t)), end = 1 - sm(DUR - .25, DUR, t);
