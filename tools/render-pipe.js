@@ -22,7 +22,7 @@ const W = +arg('w', 1440), H = +arg('h', 720), QS = arg('q', ''), FPS = 30;
   const ff = spawn('ffmpeg', ['-y', '-hide_banner', '-loglevel', 'error', '-f', 'image2pipe', '-framerate', String(FPS), '-i', '-', '-c:v', 'libx264', '-preset', 'medium', '-crf', '18', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', out]);
   const t0 = Date.now();
   for (let i = 0; i < n; i++) {
-    const b64 = await page.evaluate(t => { window.__seek(t); const c = document.createElement('canvas'); const a = document.getElementById('c'), h = document.getElementById('h'); c.width = a.width; c.height = a.height; const g = c.getContext('2d'); g.drawImage(a, 0, 0); g.drawImage(h, 0, 0); return c.toDataURL('image/jpeg', .93).split(',')[1]; }, from + i / FPS);
+    const b64 = await page.evaluate(async t => { await window.__seek(t); const c = document.createElement('canvas'); const a = document.getElementById('c'), h = document.getElementById('h'); c.width = a.width; c.height = a.height; const g = c.getContext('2d'); g.drawImage(a, 0, 0); g.drawImage(h, 0, 0); return c.toDataURL('image/jpeg', .93).split(',')[1]; }, from + i / FPS);
     if (!ff.stdin.write(Buffer.from(b64, 'base64'))) await new Promise(r => ff.stdin.once('drain', r));
     if (i % 300 === 0) console.log(`${i}/${n} frames, ${((Date.now() - t0) / 1000).toFixed(0)} s`);
   }

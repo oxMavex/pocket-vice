@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cutroom · built with Claude Opus 5.5</title>
+<style>html,body{margin:0;height:100%;background:#0f1012;overflow:hidden}
+canvas{position:fixed;inset:0;width:100%;height:100%;display:block}</style></head><body>
+<canvas id="c"></canvas><canvas id="h"></canvas>
+<script>
+// Cutroom: replays a real autoclip run (tools/autoclip.js → out/clips/clips.json) as a 30 s studio clip
+const DUR = 30, c = document.getElementById('c'), hc = document.getElementById('h'), g = c.getContext('2d');
+const sst = (a, b, x) => { const u = Math.min(1, Math.max(0, (x - a) / (b - a))); return u * u * (3 - 2 * u); };
+const lin = (a, b, x) => Math.min(1, Math.max(0, (x - a) / (b - a))), mix = (a, b, u) => a + (b - a) * u;
+const AMB = '#ffb020', MINT = '#3ce0a0', INK = '#0f1012', DIM = '#8b929c';
+// frames were cut by ffmpeg into out/frames (headless <video> seeking is unreliable)
+const NF = { hook: 73, sweep: +573, s: 360 }, SRC = { im: null, u: '' }, SH = [{ im: null, u: '' }, { im: null, u: '' }, { im: null, u: '' }];
+const fp = n => String(n).padStart(4, '0');
+async function load(slot, url) { if (slot.u === url) return; const i = new Image(); i.src = url;
+  await i.decode().catch(() => {}); slot.im = i; slot.u = url; }
+const TITLES = ['nobody is driving this car', 'this game is 1 HTML file', 'built by AI in 21 minutes'];
+const STEPS = [['01 CAPTURE', 'playwright render'], ['02 FIND MOMENTS', 'ffmpeg astats + scene'],
+  ['03 REFRAME 9:16', 'ffmpeg crop'], ['04 CAPTION', 'ffmpeg drawtext'], ['05 EXPORT', 'x264 · aac']];
+const STACK = [['CAPTURE', [['yt-dlp', 209400], ['OBS Studio', 79827], ['TwitchDownloader', 4120]]],
+  ['FIND THE MOMENT', [['PySceneDetect', 5597], ['auto-editor', 6026], ['ClipsAI', 595]]],
+  ['TRANSCRIBE', [['whisper', 113174], ['faster-whisper', 26904], ['WhisperX', 25536]]],
+  ['REFRAME 9:16', [['MediaPipe', 37760], ['Ultralytics YOLO', 63630]]],
+  ['EDIT + EXPORT', [['OpenCut', 99032], ['Remotion', 74565], ['FFmpeg', 67728], ['LosslessCut', 46258],
+    ['Remotion Skills', 7648], ['FunClip', 6605]]]];
+const STARS = STACK.reduce((a, s) => a + s[1].reduce((b, r) => b + r[1], 0), 0);
+let D = null;   // clips.json
+const S0 = 22.4, T1 = 2.4, T2 = 21.5;
+const srcT = t => t < T1 ? 20 + t : mix(S0, D.duration, lin(T1, T2, t));
+const foundAt = p => T1 + (p.end - S0) / (D.duration - S0) * (T2 - T1);
+const kStars = n => n >= 10000 ? Math.round(n / 1000) + 'K' : (n / 1000).toFixed(1) + 'K';
+function seekV() {}
+const font = (w, px, mono) => `${w} ${px}px ${mono ? 'Consolas, monospace' : '"Segoe UI", system-ui, sans-serif'}`;
+function rr(x, y, w, h, r) { g.beginPath(); g.roundRect ? g.roundRect(x, y, w, h, r) : g.rect(x, y, w, h); }
+function txt(s, x, y, f, col, al = 'left') { g.font = f; g.fillStyle = col; g.textAlign = al; g.fillText(s, x, y); }
+function cover(v, x, y, w, h) { const im = v.im; if (!im || !im.naturalWidth) return; const vr = im.naturalWidth / im.naturalHeight, r = w / h;
+  let sw = im.naturalWidth, sh = im.naturalHeight; if (vr > r) sw = sh * r; else sh = sw / r;
+  g.drawImage(im, (im.naturalWidth - sw) / 2, (im.naturalHeight - sh) / 2, sw, sh, x, y, w, h); }
+const MON = { x: 40, y: 176, w: 1000, h: 500 }, SIG = { x: 40, y: 700, w: 1000, h: 170 };
+function phoneRect(k, t) {
+  const big = sst(T2, T2 + 0.9, t), w0 = 214, h0 = 380, w1 = 312, h1 = 555;
+  const w = mix(w0, w1, big), h = mix(h0, h1, big), gap = mix(70, 30, big), x0 = 540 - (3 * w + 2 * gap) / 2;
+  return { x: x0 + k * (w + gap), y: mix(905, 330, big), w, h };
+}
+function draw(t) {
+  const st = srcT(t), s = c.width / 1080; g.setTransform(s, 0, 0, s, 0, 0); g.globalAlpha = 1;
+  g.fillStyle = INK; g.fillRect(0, 0, 1080, 1350);
+  const zoom = mix(1.75, 1, sst(1.6, 2.4, t)), cx = MON.x + MON.w / 2, cy = MON.y + MON.h / 2;
+  const uz = sst(1.6, 2.4, t); g.save(); g.translate(mix(540, cx, uz), mix(560, cy, uz)); g.scale(zoom, zoom); g.translate(-cx, -cy);
+  const big = sst(T2, T2 + 0.9, t), fade = 1 - 0.82 * big, found = D.picks.map(p => t >= foundAt(p));
+  const nFound = found.filter(Boolean).length, prog = lin(T1, T2, t);
+  g.globalAlpha = fade;
+  // header
+  txt('CUTROOM', 40, 62, font(900, 46), '#fff'); txt('auto-clip gameplay into shorts · ffmpeg + node · $0', 40, 92, font(600, 19), DIM);
+  txt(`SHORTS ${nFound}/3`, 1040, 58, font(800, 34, 1), nFound ? AMB : '#fff', 'right');
+  txt(`pipeline ${(D.total_s * prog).toFixed(1)} s / ${D.total_s} s`, 1040, 90, font(600, 18, 1), DIM, 'right');
+  // step chips
+  STEPS.forEach(([a, b], i) => {
+    const x = 40 + i * 202, lit = i === 0 ? 1 : i === 1 ? sst(T1, T1 + 0.3, t) : Math.max(...D.picks.map(p => {
+      const f = foundAt(p) - 0.9 + (i - 2) * 0.3; return sst(f, f + 0.15, t) * (1 - sst(f + 0.9, f + 1.3, t)); }),
+      nFound === 3 ? sst(foundAt(D.picks[2]) + 1, foundAt(D.picks[2]) + 1.3, t) : 0);
+    rr(x, 112, 192, 50, 8); g.fillStyle = lit > 0.5 ? 'rgba(255,176,32,.16)' : '#17191d'; g.fill();
+    g.lineWidth = 2; g.strokeStyle = lit > 0.5 ? AMB : '#262a31'; g.stroke();
+    txt(a, x + 12, 133, font(800, 16), lit > 0.5 ? AMB : '#cfd4da'); txt(b, x + 12, 153, font(500, 13, 1), DIM);
+  });
+  // monitor
+  rr(MON.x - 2, MON.y - 2, MON.w + 4, MON.h + 4, 10); g.fillStyle = '#000'; g.fill();
+  g.save(); rr(MON.x, MON.y, MON.w, MON.h, 8); g.clip(); cover(SRC, MON.x, MON.y, MON.w, MON.h);
+  const cw = MON.h * 9 / 16, crx = MON.x + (MON.w - cw) / 2;
+  const reframe = Math.max(sst(0.2, 0.5, t) * (1 - sst(1.6, 2.2, t)), ...D.picks.map(p => {
+    const f = foundAt(p) - 0.6; return sst(f, f + 0.2, t) * (1 - sst(f + 1, f + 1.4, t)); }));
+  g.fillStyle = `rgba(0,0,0,${0.55 * reframe})`; g.fillRect(MON.x, MON.y, crx - MON.x, MON.h);
+  g.fillRect(crx + cw, MON.y, MON.x + MON.w - crx - cw, MON.h); g.restore();
+  g.strokeStyle = reframe > 0.3 ? AMB : 'rgba(255,255,255,.55)'; g.lineWidth = 3;
+  for (const [x, y, dx, dy] of [[crx, MON.y, 1, 1], [crx + cw, MON.y, -1, 1], [crx, MON.y + MON.h, 1, -1], [crx + cw, MON.y + MON.h, -1, -1]]) {
+    g.beginPath(); g.moveTo(x + dx * 34, y); g.lineTo(x, y); g.lineTo(x, y + dy * 34); g.stroke(); }
+  txt('9:16', crx + 10, MON.y + 30, font(800, 18, 1), reframe > 0.3 ? AMB : '#fff');
+  txt(`SOURCE · port calder · ${fmt(st)} / ${fmt(D.duration)}`, MON.x + 14, MON.y + MON.h - 14, font(600, 16, 1), '#fff');
+  if (t > T1 && t < T2) { txt(`${(D.duration - S0) / (T2 - T1) | 0}× SCAN`, MON.x + MON.w - 14, MON.y + 30, font(800, 18, 1), MINT, 'right'); }
+  // signals
+  rr(SIG.x, SIG.y, SIG.w, SIG.h, 8); g.fillStyle = '#15171b'; g.fill();
+  txt('LOUDNESS', SIG.x + 14, SIG.y + 24, font(800, 14), AMB); txt('MOTION', SIG.x + 104, SIG.y + 24, font(800, 14), MINT);
+  txt('score = z(loudness) + z(motion) · best 12 s windows', SIG.x + SIG.w - 14, SIG.y + 24, font(500, 14, 1), DIM, 'right');
+  const gx = SIG.x + 14, gw = SIG.w - 28, gy = SIG.y + 40, gh = SIG.h - 52, X = tt => gx + tt / D.duration * gw;
+  D.picks.forEach((p, k) => { if (!found[k]) return; const a = sst(foundAt(p), foundAt(p) + 0.3, t);
+    g.fillStyle = `rgba(255,176,32,${0.22 * a})`; g.fillRect(X(p.start), gy, X(p.end) - X(p.start), gh);
+    txt(`CLIP 0${k + 1}`, X(p.start) + 4, gy + 14, font(800, 13, 1), AMB); });
+  const n = D.rms.length, ph = X(st);
+  const plot = (arr, lo, hi, col, fill) => { g.beginPath();
+    arr.forEach((v, i) => { const x = gx + i / n * gw, y = gy + gh - Math.min(1, Math.max(0, (v - lo) / (hi - lo))) * gh;
+      i ? g.lineTo(x, y) : g.moveTo(x, y); });
+    if (fill) { g.lineTo(gx + gw, gy + gh); g.lineTo(gx, gy + gh); g.fillStyle = fill; g.fill(); } else { g.strokeStyle = col; g.lineWidth = 2; g.stroke(); } };
+  g.save(); g.beginPath(); g.rect(gx, gy, ph - gx, gh); g.clip();
+  plot(D.rms, -50, -8, AMB, 'rgba(255,176,32,.35)'); plot(D.mn, 0, 1, MINT); g.restore();
+  g.save(); g.globalAlpha *= 0.25; g.beginPath(); g.rect(ph, gy, gx + gw - ph, gh); g.clip();
+  plot(D.rms, -50, -8, AMB, 'rgba(255,176,32,.35)'); plot(D.mn, 0, 1, MINT); g.restore();
+  g.fillStyle = '#fff'; g.fillRect(ph - 1, gy - 6, 2, gh + 10);
+  g.globalAlpha = 1;
+  // phones
+  D.picks.forEach((p, k) => {
+    const r = phoneRect(k, t), f = foundAt(p), on = t >= f + 0.6;
+    rr(r.x - 8, r.y - 8, r.w + 16, r.h + 16, 26); g.fillStyle = '#1d2026'; g.fill();
+    g.save(); rr(r.x, r.y, r.w, r.h, 18); g.clip(); g.fillStyle = '#0a0b0d'; g.fillRect(r.x, r.y, r.w, r.h);
+    if (on) cover(SH[k], r.x, r.y, r.w, r.h);
+    else { txt('waiting for', r.x + r.w / 2, r.y + r.h / 2 - 8, font(600, 15), DIM, 'center');
+      txt('a moment' + '...'.slice(0, 1 + ((t * 3) | 0) % 3), r.x + r.w / 2, r.y + r.h / 2 + 14, font(600, 15), DIM, 'center'); }
+    const fl = on ? 1 - lin(f + 0.6, f + 1, t) : 0; if (fl > 0) { g.fillStyle = `rgba(255,255,255,${fl * 0.6})`; g.fillRect(r.x, r.y, r.w, r.h); }
+    g.restore();
+    txt(`SHORT 0${k + 1}`, r.x, r.y + r.h + 30, font(800, 14, 1), on ? AMB : DIM);
+    txt(on ? `${fmt(p.start)}–${fmt(p.end)}` : '', r.x + r.w, r.y + r.h + 30, font(600, 14, 1), DIM, 'right');
+    // the cut flies from the monitor into the phone
+    const fly = lin(f, f + 0.6, t);
+    if (fly > 0 && fly < 1) { const e = fly * fly * (3 - 2 * fly), x = mix(crx, r.x, e), y = mix(MON.y, r.y, e),
+      w = mix(cw, r.w, e), h = mix(MON.h, r.h, e); g.save(); g.shadowColor = 'rgba(255,176,32,.6)'; g.shadowBlur = 30;
+      g.strokeStyle = AMB; g.lineWidth = 4; g.strokeRect(x, y, w, h); g.restore();
+      txt(`CLIP 0${k + 1} FOUND`, x + w / 2, y - 12, font(900, 22), AMB, 'center'); }
+  });
+  g.restore();
+  // hook stamps over the zoomed monitor
+  const hook = [[0, 1.05, 'NOBODY PLAYED THIS.'], [1.05, 2.3, 'NOBODY EDITED IT EITHER.']];
+  for (const [a, b, s2] of hook) if (t >= a && t < b) { const al = 1 - sst(b - 0.15, b, t), sc = 1 + 0.25 * (1 - sst(a, a + 0.12, t));
+    g.save(); g.globalAlpha = al; g.translate(540, 1010); g.scale(sc, sc); g.rotate(-0.03);
+    g.font = font(900, 76); const w = g.measureText(s2).width + 50; g.fillStyle = AMB; g.fillRect(-w / 2, -58, w, 98);
+    txt(s2, 0, 14, font(900, 76), INK, 'center'); g.restore(); }
+  if (t < 2.3) { g.globalAlpha = 1 - sst(2, 2.3, t); txt('a GTA-style game built by AI · driven by an autopilot · clipped by code', 540, 1100,
+    font(700, 24), '#fff', 'center'); g.globalAlpha = 1; }
+  // payoff line under the big phones
+  const pa = sst(T2 + 0.6, T2 + 1, t) * (1 - sst(25.3, 25.6, t));
+  if (pa > 0) { g.globalAlpha = pa; txt('3 shorts. 0 humans.', 540, 1000, font(900, 64), '#fff', 'center');
+    txt(`${D.total_s} seconds on a laptop, from a ${fmt(D.duration)} gameplay file.`, 540, 1048, font(600, 26), DIM, 'center'); g.globalAlpha = 1; }
+  // end card: the free stack
+  const ec = sst(25.5, 26, t);
+  if (ec > 0) { g.save(); g.translate(0, (1 - ec) * 120); g.globalAlpha = ec; g.fillStyle = 'rgba(15,16,18,.96)'; g.fillRect(0, 0, 1080, 1350);
+    txt('THE FREE CLIP STUDIO', 60, 150, font(900, 58), '#fff'); txt('swap my ffmpeg steps for these when you clip real footage', 60, 192, font(600, 22), DIM);
+    let y = 270; STACK.forEach(([step, repos], i) => { const a = sst(26 + i * 0.25, 26.3 + i * 0.25, t); g.globalAlpha = ec * a;
+      txt(`0${i + 1}`, 60, y, font(900, 26, 1), AMB); txt(step, 120, y, font(800, 26), '#fff');
+      let x = 120, yy = y + 42; for (const [nm, st2] of repos) { g.font = font(700, 21); const lbl = `${nm}  ★${kStars(st2)}`, w = g.measureText(lbl).width + 26;
+        if (x + w > 1030) { x = 120; yy += 46; } rr(x, yy - 28, w, 38, 8); g.fillStyle = '#1b1e23'; g.fill();
+        txt(nm, x + 13, yy - 2, font(700, 21), '#e8eaed'); txt(`★${kStars(st2)}`, x + w - 13, yy - 2, font(700, 21), AMB, 'right'); x += w + 10; }
+      y = yy + 70; });
+    g.globalAlpha = ec * sst(27.6, 28, t);
+    txt(`17 repos · ${STARS.toLocaleString('en-US')} GitHub stars · $0`, 540, 1225, font(900, 36), AMB, 'center');
+    txt('footage: my own game, built by Claude, driven by an autopilot', 540, 1268, font(600, 20), DIM, 'center');
+    g.restore(); }
+  g.globalAlpha = 1; txt('built with Claude Opus 5.5', 1040, 1336, font(600, 15, 1), '#5d636c', 'right');
+}
+const fmt = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+const EV = [[0, 'hit'], [1.05, 'hit'], [1.6, 'whoosh'], [T2, 'whoosh'], [25.5, 'card'], [27.6, 'hit']];
+let T = 0, rec = false;
+async function seek(t) {
+  T = t; rec = true; const jobs = [t < T1 ? load(SRC, 'out/frames/hook/' + fp(Math.min(NF.hook, 1 + Math.round(t * 30))) + '.jpg')
+    : load(SRC, 'out/frames/sweep/' + fp(Math.min(NF.sweep, 1 + Math.round((t - T1) * 30))) + '.jpg')];
+  D.picks.forEach((p, k) => { const f = foundAt(p) + 0.6; if (t >= f)
+    jobs.push(load(SH[k], `out/frames/s${k + 1}/` + fp(1 + Math.round(((t - f) % 11.9) * 30)) + '.jpg')); });
+  await Promise.all(jobs); draw(t);
+}
+function size() { const d = Math.min(devicePixelRatio, 2); c.width = innerWidth * d; c.height = innerHeight * d;
+  hc.width = c.width; hc.height = c.height; if (D) draw(T); }
+let ext = false; window.__duration = DUR; window.__seek = t => { ext = true; return seek(t); };
+window.__tl = () => ({ ev: EV.filter(e => e[0] > T - 1 / 30 + 1e-6 && e[0] <= T + 1e-6).map(e => e[1]) });
+fetch('out/clips/clips.json').then(r => r.json()).then(async j => {
+  D = j; const mx = [...j.motion].sort((a, b) => a - b)[Math.floor(j.motion.length * 0.97)] || 1;
+  D.mn = j.motion.map(v => Math.min(1, v / mx));
+  D.picks.forEach((p, k) => { EV.push([foundAt(p), 'found']); EV.push([foundAt(p) + 0.6, 'pop']); });
+  for (let x = T1 + 0.25; x < T2; x += 0.25) EV.push([x, 'tick']);
+    size(); addEventListener('resize', size); await seek(0); window.__ready = true;
+  const t0 = performance.now(); let busy = false;   // live preview: step through the same timeline
+  setInterval(async () => { if (ext || busy) return; busy = true;
+    await seek(((performance.now() - t0) / 1000) % DUR); busy = false; }, 100);
+});
+</script></body></html>

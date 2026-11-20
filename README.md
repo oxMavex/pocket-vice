@@ -10,6 +10,7 @@ Tiny living cities, one HTML file each. You don't play a criminal, you play the 
 | 05 | The Last Fare (mission): the Curbside street with a mission HUD of my own — title card, minimap, objective, marker, result. | [watch](https://oxmavex.github.io/pocket-vice/builds/05-mission/) | 29.1 KB + three.js r128 (CDN) |
 | 06 | Port Calder (MODEL HEIST): a GTA-style coastal city from one shared prompt — driving, taxi fare, checkpoint sprint, paint shop, traffic, day to night. `?demo` plays itself. | [play](https://oxmavex.github.io/pocket-vice/builds/06-model-heist/) · [demo](https://oxmavex.github.io/pocket-vice/builds/06-model-heist/?demo) | 60.3 KB + three.js r128 (CDN) |
 | 07 | NPC #48: a 36-second trailer. A background NPC breaks his loop, finds the edge of the map, and the city turns out to be built from its own source code (one building per word). | [watch](https://oxmavex.github.io/pocket-vice/builds/07-npc-48/) | 26.9 KB + three.js r128 (CDN) |
+| 08 | Cutroom: tools/autoclip.js cuts Port Calder gameplay into 3 vertical shorts (loudness + motion score, 9:16 crop, titles) in 52.6 s; the page replays that run as a 30 s studio clip. | render page (needs local frames) | ffmpeg + node |
 | 01 | Clockwork Block: 210 people, each with their own daily schedule. Tap anyone to see their day. | [play](https://oxmavex.github.io/pocket-vice/builds/01-clockwork-block/) | 48.9 KB + three.js r128 (CDN) |
 
 Add `?seed=<any number>` to a build URL to get your own city.

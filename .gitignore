@@ -22,3 +22,9 @@ builds/06-model-heist/out/render-log.txt
 
 builds/07-npc-48/out/*.mp4
 builds/07-npc-48/out/render-log.txt
+builds/08-cutroom/out/*.mp4
+builds/08-cutroom/out/render-log.txt
+builds/08-cutroom/out/frames/
+builds/08-cutroom/out/proxy/
+builds/08-cutroom/out/clips/*.mp4
+builds/08-cutroom/out/clips/*.txt

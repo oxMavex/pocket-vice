@@ -43,6 +43,7 @@ function pad(t0, t1, freqs, g, gainAt = () => 1) {
     add(i, g * e * v / freqs.length * (0.8 + 0.2 * Math.sin(TAU * 0.3 * s)), 0); }
 }
 
+if (slug === '07-npc-48') {
 // underscore: a tense loop that stops dead when #48 looks up, then grows
 pad(0, 18.4, [55, 110, 164.8, 261.6], 0.11, s => (s < 1 ? 1 : s < 2.2 ? 0 : Math.min(1, (s - 2.2) / 2)) * (0.7 + s / 30));
 noise(11, 18.4, u => Math.sin(Math.PI * u) * 0.5, () => 0.02);                       // wind at the edge
@@ -53,11 +54,29 @@ for (let t = 25.25; t < 32.4; t += BEAT) {                                      
   tone(t, BEAT * 0.9, [[55, 55, 65.4, 49][Math.floor((t - 25.25) / BEAT / 2) % 4]], 0.22, 0.005, 0.18, 'saw', 0, 0.05); }
 pad(25.25, 32.6, [110, 164.8, 220, 329.6], 0.06);
 pad(33, DUR + 0.8, [55, 110, 138.6, 164.8, 220, 277.2], 0.12, s => Math.exp(-(s - 33) / 5));
+} else {   // 08-cutroom: a driving 128 BPM loop while it scans, a wide chord on the payoff
+  const B = 60 / 128, BASS = [55, 55, 65.4, 49];
+  pad(0, 2.4, [41.2, 82.4], 0.1);
+  for (let t = 2.4; t < 21.5; t += B) { const bar = Math.floor((t - 2.4) / B / 4);
+    thump(t, 0.5, 50, 0.18); click(t + B / 2, 0.1, 7000, 0.01);
+    tone(t, B * 0.85, [BASS[bar % 4]], 0.2, 0.004, 0.16, 'saw', 0, 0.06); }
+  pad(2.4, 21.6, [220, 261.6, 329.6], 0.05);
+  for (let t = 21.5; t < 25.5; t += B * 2) thump(t, 0.45, 48, 0.3);
+  pad(21.5, 25.8, [55, 110, 164.8, 220, 277.2, 329.6], 0.12);
+  pad(25.5, DUR + 0.8, [110, 164.8, 220, 329.6], 0.07, s => Math.exp(-(s - 25.5) / 4));
+}
 
 for (const [t, e] of ev) {
   if (e === 'crowd') { const g = t < 10 ? 0.28 : t < 15 ? 0.14 : 0.06;
     for (const [d, p] of [[0, -0.3], [0.007, 0.25], [0.013, 0], [0.019, 0.4]]) thump(t + d, g, 85, 0.06, p); }
   if (e === 'step') thump(t, 0.32, 110, 0.05, 0.1);
+  if (e === 'hit') { thump(t, 1, 40, 0.5); tone(t, 1.5, [55, 55.4, 110.6], 0.35, 0.004, 0.5, 'saw', 0, 0.04); }
+  if (e === 'whoosh') noise(t - 0.3, t + 0.5, u => Math.sin(Math.PI * u), u => 0.03 + u * 0.25, u => u - 0.5, 0.8);
+  if (e === 'card') { noise(t - 0.2, t + 0.6, u => Math.sin(Math.PI * u), () => 0.2, () => 0, 0.6);
+    tone(t + 0.1, 3, [659.3, 987.8, 1318.5], 0.12, 0.002, 1.2); }
+  if (e === 'found') { tone(t, 0.25, [880, 1320], 0.14, 0.002, 0.12, 'sq', 0, 0.3); tone(t + 0.12, 1.4, [1760, 2637], 0.12, 0.002, 0.5); }
+  if (e === 'pop') { thump(t, 0.6, 60, 0.15); click(t, 0.3, 3000, 0.01); }
+  if (e === 'tick') click(t, 0.06, 4200, 0.004, 0.5);
   if (e === 'run') thump(t, 0.4, 95, 0.06);
   if (e === 'stop') thump(t, 0.25, 70, 0.08);
   if (e === 'look') { noise(t - 0.6, t, u => u * u * u, u => 0.02 + u * 0.4, () => 0, 0.9);   // reverse swell
